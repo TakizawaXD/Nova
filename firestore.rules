@@ -9,7 +9,7 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == userId;
     }
 
-    // Usuarios: Lectura pública, escritura solo el dueño
+    // Usuarios: Lectura pública, creación para autenticados, actualización solo dueño
     match /users/{userId} {
       allow read: if true;
       allow create: if isSignedIn();
@@ -17,17 +17,15 @@ service cloud.firestore {
       allow delete: if isOwner(userId);
     }
     
-    // Publicaciones: Lectura pública, creación para autenticados
+    // Publicaciones: Lectura pública, creación/likes/comentarios para autenticados
     match /posts/{postId} {
       allow read: if true;
       allow create: if isSignedIn();
-      // Permitir actualización si estás logueado (para likes/comentarios) 
-      // o si eres el dueño para editar el contenido
-      allow update: if isSignedIn();
+      allow update: if isSignedIn(); // Permitir likes y contadores
       allow delete: if isSignedIn() && resource.data.authorId == request.auth.uid;
     }
     
-    // Comentarios: Lectura pública, creación para autenticados
+    // Comentarios: Lectura pública, creación/edición para autenticados
     match /comments/{commentId} {
       allow read: if true;
       allow create: if isSignedIn();
@@ -43,16 +41,15 @@ service cloud.firestore {
       allow delete: if isSignedIn() && resource.data.authorId == request.auth.uid;
     }
 
-    // Chats: Solo participantes pueden leer y actualizar
+    // Chats: Participantes pueden leer y actualizar
     match /chats/{chatId} {
       allow read: if isSignedIn() && request.auth.uid in resource.data.participants;
       allow create: if isSignedIn();
       allow update: if isSignedIn() && request.auth.uid in resource.data.participants;
-      allow delete: if false; // Por ahora no permitimos borrar chats completos
+      allow delete: if false;
     }
 
     // Mensajes: Lectura permitida si el usuario está autenticado 
-    // (el filtro por chatId en el cliente asegura la privacidad)
     match /messages/{messageId} {
       allow read: if isSignedIn(); 
       allow create: if isSignedIn();
@@ -68,7 +65,7 @@ service cloud.firestore {
       allow delete: if isSignedIn() && resource.data.authorId == request.auth.uid;
     }
 
-    // Marketplace: Venta P2P
+    // Marketplace: Lectura pública, gestión para dueños
     match /marketplace/{itemId} {
       allow read: if true;
       allow create: if isSignedIn();
@@ -76,15 +73,12 @@ service cloud.firestore {
       allow delete: if isSignedIn() && resource.data.sellerId == request.auth.uid;
     }
 
-    // Seguidores y Amigos
-    match /followers/{followId} {
-      allow read: if true;
-      allow create, delete: if isSignedIn();
-    }
-    
-    match /following/{followId} {
-      allow read: if true;
-      allow create, delete: if isSignedIn();
-    }
+    // Seguidores, Amigos, Bloqueos, Reportes
+    match /followers/{id} { allow read, write: if isSignedIn(); }
+    match /following/{id} { allow read, write: if isSignedIn(); }
+    match /friends/{id} { allow read, write: if isSignedIn(); }
+    match /blockedUsers/{id} { allow read, write: if isSignedIn(); }
+    match /reports/{id} { allow read: if isSignedIn(); allow create: if isSignedIn(); }
+    match /notifications/{id} { allow read, write: if isSignedIn(); }
   }
 }

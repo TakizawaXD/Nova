@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { onAuthStateChanged, User } from 'firebase/auth';
-import { doc, getDoc, onSnapshot } from 'firebase/firestore';
+import { doc, onSnapshot } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 
 interface AuthContextType {
@@ -27,14 +27,26 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setUser(firebaseUser);
       
       if (firebaseUser) {
-        // Suscribirse al perfil en tiempo real para reflejar cambios (fotos, bio, etc.)
+        // Suscribirse al perfil en tiempo real
         const profileRef = doc(db, 'users', firebaseUser.uid);
-        const unsubscribeProfile = onSnapshot(profileRef, (snapshot) => {
-          if (snapshot.exists()) {
-            setProfile({ ...snapshot.data(), uid: firebaseUser.uid });
+        const unsubscribeProfile = onSnapshot(
+          profileRef, 
+          (snapshot) => {
+            if (snapshot.exists()) {
+              setProfile({ ...snapshot.data(), uid: firebaseUser.uid });
+            } else {
+              setProfile(null);
+            }
+            setLoading(false);
+          },
+          (error) => {
+            console.error("Error al suscribirse al perfil:", error);
+            // Si hay error de permisos o no existe, permitimos que la app cargue 
+            // pero sin perfil completo.
+            setProfile(null);
+            setLoading(false);
           }
-          setLoading(false);
-        });
+        );
 
         return () => unsubscribeProfile();
       } else {
@@ -48,7 +60,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   return (
     <AuthContext.Provider value={{ user, profile, loading }}>
-      {!loading && children}
+      {children}
     </AuthContext.Provider>
   );
 };

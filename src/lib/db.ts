@@ -1,4 +1,3 @@
-
 import { 
   collection, 
   addDoc, 
@@ -21,7 +20,8 @@ import {
 } from 'firebase/firestore';
 import { db } from './firebase';
 
-// Interfaces extendidas
+// --- INTERFACES ---
+
 export interface Post {
   id?: string;
   authorId: string;
@@ -47,20 +47,6 @@ export interface Comment {
   createdAt: any;
 }
 
-export interface Reel {
-  id?: string;
-  authorId: string;
-  authorName: string;
-  authorHandle: string;
-  authorAvatar: string;
-  videoUrl: string;
-  description: string;
-  musicName: string;
-  likes: number;
-  comments: number;
-  createdAt: any;
-}
-
 export interface UserProfile {
   uid: string;
   displayName: string;
@@ -77,14 +63,78 @@ export interface UserProfile {
   createdAt: any;
 }
 
-// Funciones de Posts & Interacción
+export interface Message {
+  id?: string;
+  chatId: string;
+  senderId: string;
+  text: string;
+  createdAt: any;
+}
+
+export interface Story {
+  id?: string;
+  authorId: string;
+  authorName: string;
+  authorAvatar: string;
+  imageUrl: string;
+  createdAt: any;
+  expiresAt: Timestamp;
+}
+
+export interface MarketItem {
+  id?: string;
+  sellerId: string;
+  title: string;
+  price: string;
+  description: string;
+  imageUrl: string;
+  category: string;
+  location: string;
+  createdAt: any;
+}
+
+export interface Reel {
+  id?: string;
+  authorId: string;
+  authorName: string;
+  authorHandle: string;
+  authorAvatar: string;
+  videoUrl: string;
+  description: string;
+  musicName: string;
+  likes: number;
+  comments: number;
+  createdAt: any;
+}
+
+// --- FUNCIONES DE USUARIO ---
+
+export const isUsernameAvailable = async (username: string) => {
+  const q = query(collection(db, 'users'), where('username', '==', username.toLowerCase()));
+  const snapshot = await getDocs(q);
+  return snapshot.empty;
+};
+
+export const updateProfileData = async (uid: string, data: Partial<UserProfile>) => {
+  const userRef = doc(db, 'users', uid);
+  await updateDoc(userRef, data);
+};
+
+// --- FUNCIONES DE POSTS ---
+
 export const createPost = async (postData: Omit<Post, 'createdAt'>) => {
-  const docRef = await addDoc(collection(db, 'posts'), {
+  return await addDoc(collection(db, 'posts'), {
     ...postData,
     likedBy: [],
     createdAt: serverTimestamp(),
   });
-  return docRef.id;
+};
+
+export const subscribeToPosts = (callback: (posts: Post[]) => void) => {
+  const q = query(collection(db, 'posts'), orderBy('createdAt', 'desc'), limit(50));
+  return onSnapshot(q, (snapshot) => {
+    callback(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Post[]);
+  });
 };
 
 export const toggleLikePost = async (postId: string, userId: string, isLiked: boolean) => {
@@ -111,99 +161,7 @@ export const subscribeToComments = (postId: string, callback: (comments: Comment
   });
 };
 
-// Funciones de Perfil & Seguidores
-export const updateProfileData = async (uid: string, data: Partial<UserProfile>) => {
-  const userRef = doc(db, 'users', uid);
-  await updateDoc(userRef, data);
-};
-
-export const followUser = async (followerId: string, followedId: string) => {
-  // Crear relación en followers
-  await setDoc(doc(db, 'followers', `${followerId}_${followedId}`), {
-    followerId,
-    followedId,
-    createdAt: serverTimestamp()
-  });
-  // Actualizar contadores
-  await updateDoc(doc(db, 'users', followerId), { followingCount: increment(1) });
-  await updateDoc(doc(db, 'users', followedId), { followersCount: increment(1) });
-};
-
-// Funciones de Reels
-export const createReel = async (reelData: Omit<Reel, 'createdAt'>) => {
-  await addDoc(collection(db, 'reels'), {
-    ...reelData,
-    createdAt: serverTimestamp(),
-  });
-};
-
-export const subscribeToReels = (callback: (reels: Reel[]) => void) => {
-  const q = query(collection(db, 'reels'), orderBy('createdAt', 'desc'), limit(20));
-  return onSnapshot(q, (snapshot) => {
-    callback(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Reel[]);
-  });
-};
-
-// Funciones de Chat & Mensajes
-export const sendMessage = async (chatId: string, senderId: string, text: string) => {
-  await addDoc(collection(db, 'messages'), {
-    chatId,
-    senderId,
-    text,
-    createdAt: serverTimestamp(),
-  });
-  
-  const chatRef = doc(db, 'chats', chatId);
-  await updateDoc(chatRef, {
-    lastMessage: text,
-    updatedAt: serverTimestamp(),
-  });
-};
-
-export const subscribeToMessages = (chatId: string, callback: (messages: Message[]) => void) => {
-  const q = query(
-    collection(db, 'messages'), 
-    where('chatId', '==', chatId),
-    orderBy('createdAt', 'asc')
-  );
-  return onSnapshot(q, (snapshot) => {
-    callback(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Message[]);
-  });
-};
-
-// Marketplace
-export const listMarketItem = async (item: Omit<MarketItem, 'createdAt'>) => {
-  await addDoc(collection(db, 'marketplace'), {
-    ...item,
-    createdAt: serverTimestamp(),
-  });
-};
-
-export const subscribeToMarketplace = (callback: (items: MarketItem[]) => void) => {
-  const q = query(collection(db, 'marketplace'), orderBy('createdAt', 'desc'));
-  return onSnapshot(q, (snapshot) => {
-    callback(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as MarketItem[]);
-  });
-};
-
-export const subscribeToPosts = (callback: (posts: Post[]) => void) => {
-  const q = query(collection(db, 'posts'), orderBy('createdAt', 'desc'), limit(50));
-  return onSnapshot(q, (snapshot) => {
-    callback(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Post[]);
-  });
-};
-
-export const subscribeToActiveStories = (callback: (stories: Story[]) => void) => {
-  const now = Timestamp.now();
-  const q = query(
-    collection(db, 'stories'),
-    where('expiresAt', '>', now),
-    orderBy('expiresAt', 'asc')
-  );
-  return onSnapshot(q, (snapshot) => {
-    callback(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Story[]);
-  });
-};
+// --- FUNCIONES DE CHAT ---
 
 export const subscribeToUserChats = (userId: string, callback: (chats: any[]) => void) => {
   const q = query(
@@ -216,8 +174,60 @@ export const subscribeToUserChats = (userId: string, callback: (chats: any[]) =>
   });
 };
 
+export const sendMessage = async (chatId: string, senderId: string, text: string) => {
+  await addDoc(collection(db, 'messages'), {
+    chatId,
+    senderId,
+    text,
+    createdAt: serverTimestamp(),
+  });
+  const chatRef = doc(db, 'chats', chatId);
+  await updateDoc(chatRef, {
+    lastMessage: text,
+    updatedAt: serverTimestamp(),
+  });
+};
+
+export const subscribeToMessages = (chatId: string, callback: (messages: Message[]) => void) => {
+  const q = query(collection(db, 'messages'), where('chatId', '==', chatId), orderBy('createdAt', 'asc'));
+  return onSnapshot(q, (snapshot) => {
+    callback(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Message[]);
+  });
+};
+
+// --- OTRAS FUNCIONES ---
+
+export const subscribeToMarketplace = (callback: (items: MarketItem[]) => void) => {
+  const q = query(collection(db, 'marketplace'), orderBy('createdAt', 'desc'));
+  return onSnapshot(q, (snapshot) => {
+    callback(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as MarketItem[]);
+  });
+};
+
+export const listMarketItem = async (item: Omit<MarketItem, 'createdAt'>) => {
+  await addDoc(collection(db, 'marketplace'), {
+    ...item,
+    createdAt: serverTimestamp(),
+  });
+};
+
 export const createStory = async (authorId: string, authorName: string, authorAvatar: string, imageUrl: string) => {
   const now = Timestamp.now();
   const expiresAt = new Timestamp(now.seconds + (24 * 60 * 60), now.nanoseconds);
   await addDoc(collection(db, 'stories'), { authorId, authorName, authorAvatar, imageUrl, createdAt: serverTimestamp(), expiresAt });
+};
+
+export const subscribeToActiveStories = (callback: (stories: Story[]) => void) => {
+  const now = Timestamp.now();
+  const q = query(collection(db, 'stories'), where('expiresAt', '>', now));
+  return onSnapshot(q, (snapshot) => {
+    callback(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Story[]);
+  });
+};
+
+export const subscribeToReels = (callback: (reels: Reel[]) => void) => {
+  const q = query(collection(db, 'reels'), orderBy('createdAt', 'desc'), limit(20));
+  return onSnapshot(q, (snapshot) => {
+    callback(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Reel[]);
+  });
 };

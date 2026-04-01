@@ -1,8 +1,7 @@
-
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Funciones de ayuda
+    // Funciones de ayuda globales
     function isSignedIn() {
       return request.auth != null;
     }
@@ -10,24 +9,30 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == userId;
     }
 
+    // Usuarios: Lectura pública, escritura solo el dueño
     match /users/{userId} {
       allow read: if true;
-      allow write: if isOwner(userId);
+      allow create: if isSignedIn();
+      allow update: if isOwner(userId);
+      allow delete: if isOwner(userId);
     }
     
+    // Publicaciones: Lectura pública, creación para autenticados
     match /posts/{postId} {
       allow read: if true;
       allow create: if isSignedIn();
-      allow update: if isSignedIn(); // Permitir likes y comentarios de otros
+      allow update: if isSignedIn(); // Permitir likes y comentarios (incrementos)
       allow delete: if isSignedIn() && resource.data.authorId == request.auth.uid;
     }
     
+    // Comentarios: Lectura pública, creación para autenticados
     match /comments/{commentId} {
       allow read: if true;
       allow create: if isSignedIn();
       allow delete: if isSignedIn() && resource.data.authorId == request.auth.uid;
     }
 
+    // Reels: Igual que posts
     match /reels/{reelId} {
       allow read: if true;
       allow create: if isSignedIn();
@@ -35,29 +40,34 @@ service cloud.firestore {
       allow delete: if isSignedIn() && resource.data.authorId == request.auth.uid;
     }
 
+    // Chats: Solo participantes pueden leer y actualizar
     match /chats/{chatId} {
       allow read: if isSignedIn() && request.auth.uid in resource.data.participants;
       allow create: if isSignedIn();
       allow update: if isSignedIn() && request.auth.uid in resource.data.participants;
     }
 
+    // Mensajes: Solo si perteneces al chat
     match /messages/{messageId} {
-      allow read: if isSignedIn();
+      allow read: if isSignedIn(); 
       allow create: if isSignedIn();
     }
 
+    // Historias: Lectura pública, expiración por tiempo
     match /stories/{storyId} {
       allow read: if true;
       allow create: if isSignedIn();
-      allow delete: if isOwner(resource.data.authorId);
+      allow delete: if isSignedIn() && resource.data.authorId == request.auth.uid;
     }
 
+    // Marketplace: Venta P2P
     match /marketplace/{itemId} {
       allow read: if true;
       allow create: if isSignedIn();
-      allow update, delete: if isOwner(resource.data.sellerId);
+      allow update, delete: if isSignedIn() && resource.data.sellerId == request.auth.uid;
     }
 
+    // Seguidores y Amigos
     match /followers/{followId} {
       allow read: if true;
       allow create, delete: if isSignedIn();

@@ -1,9 +1,8 @@
-
 'use client';
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { onAuthStateChanged, User } from 'firebase/auth';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { doc, getDoc, onSnapshot } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 
 interface AuthContextType {
@@ -24,39 +23,32 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+    const unsubscribeAuth = onAuthStateChanged(auth, async (firebaseUser) => {
       setUser(firebaseUser);
+      
       if (firebaseUser) {
-        const docRef = doc(db, 'users', firebaseUser.uid);
-        const docSnap = await getDoc(docRef);
-        if (docSnap.exists()) {
-          setProfile(docSnap.data());
-        } else {
-          // Si no existe perfil en Firestore, lo creamos
-          const initialProfile = {
-            uid: firebaseUser.uid,
-            email: firebaseUser.email,
-            displayName: firebaseUser.displayName || 'Usuario Nova',
-            photoURL: firebaseUser.photoURL || `https://picsum.photos/seed/${firebaseUser.uid}/200/200`,
-            username: firebaseUser.email?.split('@')[0] || 'usuario',
-            bio: '¡Hola! Soy nuevo en Nova.',
-            createdAt: new Date().toISOString(),
-          };
-          await setDoc(docRef, initialProfile);
-          setProfile(initialProfile);
-        }
+        // Suscribirse al perfil en tiempo real para reflejar cambios (fotos, bio, etc.)
+        const profileRef = doc(db, 'users', firebaseUser.uid);
+        const unsubscribeProfile = onSnapshot(profileRef, (snapshot) => {
+          if (snapshot.exists()) {
+            setProfile({ ...snapshot.data(), uid: firebaseUser.uid });
+          }
+          setLoading(false);
+        });
+
+        return () => unsubscribeProfile();
       } else {
         setProfile(null);
+        setLoading(false);
       }
-      setLoading(false);
     });
 
-    return () => unsubscribe();
+    return () => unsubscribeAuth();
   }, []);
 
   return (
     <AuthContext.Provider value={{ user, profile, loading }}>
-      {children}
+      {!loading && children}
     </AuthContext.Provider>
   );
 };

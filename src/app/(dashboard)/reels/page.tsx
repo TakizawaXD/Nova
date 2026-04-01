@@ -1,78 +1,135 @@
+
 'use client';
 
-import { Heart, MessageCircle, Share2, Music, MoreVertical } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { Heart, MessageCircle, Share2, Music, MoreVertical, Play, Pause, Loader2 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { useState } from 'react';
-
-const mockReels = [
-  { id: 1, author: 'NeonVibe', handle: 'neon_vibe', music: 'Future Retro - Wave', likes: '1.2M', comments: '12k', image: 'https://picsum.photos/seed/r1/1080/1920' },
-  { id: 2, author: 'Cyberscape', handle: 'scape_c', music: 'System Malfunction', likes: '840k', comments: '5.2k', image: 'https://picsum.photos/seed/r2/1080/1920' },
-  { id: 3, author: 'Atlas One', handle: 'atlas_1', music: 'Interstellar Dreams', likes: '2.4M', comments: '45k', image: 'https://picsum.photos/seed/r3/1080/1920' },
-];
+import { subscribeToReels, Reel } from '@/lib/db';
+import { cn } from '@/lib/utils';
 
 export default function ReelsPage() {
-  const [activeReel, setActiveReel] = useState(0);
+  const [reels, setReels] = useState<Reel[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [playingId, setPlayingId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const unsubscribe = subscribeToReels((data) => {
+      // Si no hay datos, usamos mock para rellenar
+      if (data.length === 0) {
+        setReels([
+          { id: '1', authorId: 'u1', authorName: 'Nova Vision', authorHandle: 'nova_v', musicName: 'Quantum Waves', likes: 1200, comments: 45, videoUrl: '', description: 'Explorando el metaverso NovaSphere 2.0. ¡Bienvenidos al futuro!' },
+          { id: '2', authorId: 'u2', authorName: 'Ciber Punk', authorHandle: 'punk_c', musicName: 'Neon Nights', likes: 850, comments: 12, videoUrl: '', description: 'Las calles de Nova City nunca duermen. #Cyberpunk #Nova' }
+        ] as any[]);
+      } else {
+        setReels(data);
+      }
+      setLoading(false);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center h-[calc(100vh-140px)]">
+        <Loader2 className="w-10 h-10 text-primary animate-spin" />
+        <p className="mt-4 text-xs font-black uppercase tracking-[0.2em] text-muted-foreground">Sincronizando Reels...</p>
+      </div>
+    );
+  }
 
   return (
-    <div className="flex flex-col items-center gap-8 h-[calc(100vh-120px)] overflow-y-scroll scroll-hide snap-y snap-mandatory px-4">
-      {mockReels.map((reel, idx) => (
-        <div key={reel.id} className="relative w-full max-w-[400px] aspect-[9/16] rounded-3xl overflow-hidden snap-center flex-shrink-0 shadow-2xl shadow-primary/10 border border-white/10">
-          <img src={reel.image} className="absolute inset-0 w-full h-full object-cover" alt="Reel Content" />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent z-10" />
-          
-          {/* Overlay Content */}
-          <div className="absolute bottom-0 left-0 right-0 p-6 z-20 flex justify-between items-end">
-            <div className="space-y-4 flex-1">
-              <div className="flex items-center gap-3">
-                <Avatar className="h-10 w-10 border-2 border-white/20">
-                  <AvatarImage src={`https://picsum.photos/seed/ra${reel.id}/100/100`} />
-                  <AvatarFallback>{reel.author[0]}</AvatarFallback>
-                </Avatar>
-                <div>
-                  <p className="font-bold text-white flex items-center gap-2">
-                    {reel.author}
-                    <Button variant="outline" size="sm" className="h-6 text-[10px] font-bold rounded-full border-white/30 text-white hover:bg-white hover:text-black">Follow</Button>
-                  </p>
-                  <p className="text-xs text-white/70">@{reel.handle}</p>
-                </div>
-              </div>
-              <p className="text-sm text-white line-clamp-2">Exploring the boundaries of digital reality in NovaSphere 2.0. Join the revolution! 🚀✨</p>
-              <div className="flex items-center gap-2 text-white/80">
-                <Music className="w-4 h-4 animate-bounce" />
-                <span className="text-xs">{reel.music}</span>
-              </div>
-            </div>
+    <div className="flex flex-col items-center h-[calc(100vh-140px)] overflow-y-scroll snap-y snap-mandatory scroll-hide">
+      {reels.map((reel) => (
+        <ReelItem key={reel.id} reel={reel} isPlaying={playingId === reel.id} onToggle={() => setPlayingId(playingId === reel.id ? null : reel.id!)} />
+      ))}
+    </div>
+  );
+}
 
-            <div className="flex flex-col items-center gap-6 ml-4">
-              <div className="flex flex-col items-center gap-1 group cursor-pointer">
-                <div className="p-3 rounded-full bg-white/10 backdrop-blur-md group-hover:bg-red-500 transition-colors">
-                  <Heart className="w-6 h-6 text-white group-hover:fill-current" />
-                </div>
-                <span className="text-[10px] font-bold text-white">{reel.likes}</span>
+function ReelItem({ reel, isPlaying, onToggle }: { reel: Reel, isPlaying: boolean, onToggle: () => void }) {
+  const videoRef = useRef<HTMLImageElement>(null); // Usamos img para el mock, video real en prod
+
+  return (
+    <div className="relative w-full max-w-[420px] h-[calc(100vh-160px)] rounded-[3rem] overflow-hidden snap-center flex-shrink-0 mb-6 border border-white/10 shadow-2xl shadow-primary/10 group">
+      {/* Background Media */}
+      <img 
+        src={`https://picsum.photos/seed/r${reel.id}/1080/1920`} 
+        className="absolute inset-0 w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105" 
+        alt="Reel content" 
+      />
+      
+      {/* Overlay controls */}
+      <div 
+        onClick={onToggle}
+        className="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-transparent z-10 cursor-pointer flex items-center justify-center"
+      >
+        {!isPlaying && (
+          <div className="w-20 h-20 bg-white/10 backdrop-blur-xl rounded-full flex items-center justify-center border border-white/20 animate-pulse">
+            <Play className="w-10 h-10 text-white fill-current ml-1" />
+          </div>
+        )}
+      </div>
+
+      {/* Content */}
+      <div className="absolute bottom-0 left-0 right-0 p-8 z-20 flex justify-between items-end gap-4">
+        <div className="flex-1 space-y-4">
+          <div className="flex items-center gap-3">
+            <Avatar className="h-12 w-12 border-2 border-white/20 shadow-xl">
+              <AvatarImage src={reel.authorAvatar} />
+              <AvatarFallback>{reel.authorName[0]}</AvatarFallback>
+            </Avatar>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="font-black text-white text-lg tracking-tighter uppercase">{reel.authorName}</span>
+                <Button variant="outline" size="sm" className="h-6 text-[9px] font-black rounded-full border-primary/50 text-primary hover:bg-primary hover:text-white uppercase px-3">Seguir</Button>
               </div>
-              <div className="flex flex-col items-center gap-1 group cursor-pointer">
-                <div className="p-3 rounded-full bg-white/10 backdrop-blur-md group-hover:bg-primary transition-colors">
-                  <MessageCircle className="w-6 h-6 text-white" />
-                </div>
-                <span className="text-[10px] font-bold text-white">{reel.comments}</span>
-              </div>
-              <div className="flex flex-col items-center gap-1 group cursor-pointer">
-                <div className="p-3 rounded-full bg-white/10 backdrop-blur-md group-hover:bg-accent transition-colors">
-                  <Share2 className="w-6 h-6 text-white" />
-                </div>
-                <span className="text-[10px] font-bold text-white">Share</span>
-              </div>
-              <Button variant="ghost" size="icon" className="rounded-full text-white/60">
-                <MoreVertical className="w-6 h-6" />
-              </Button>
-              <div className="w-10 h-10 rounded-lg border-2 border-white/40 overflow-hidden animate-[spin_4s_linear_infinite]">
-                <img src={`https://picsum.photos/seed/mus${reel.id}/100/100`} className="w-full h-full object-cover" alt="Album Art" />
-              </div>
+              <p className="text-xs text-white/70 font-medium">@{reel.authorHandle}</p>
+            </div>
+          </div>
+          
+          <p className="text-sm text-white/90 leading-relaxed line-clamp-2">{reel.description}</p>
+          
+          <div className="flex items-center gap-3 text-white/80">
+            <div className="bg-white/10 backdrop-blur-md px-3 py-1.5 rounded-full flex items-center gap-2 border border-white/5">
+              <Music className="w-3 h-3 animate-[spin_4s_linear_infinite]" />
+              <span className="text-[10px] font-bold uppercase tracking-widest">{reel.musicName}</span>
             </div>
           </div>
         </div>
-      ))}
+
+        {/* Action Buttons */}
+        <div className="flex flex-col items-center gap-6">
+          <div className="flex flex-col items-center gap-1 group/btn">
+            <div className="p-4 rounded-[1.5rem] bg-white/10 backdrop-blur-xl border border-white/20 hover:bg-red-500 hover:text-white transition-all cursor-pointer group-hover/btn:scale-110">
+              <Heart className="w-7 h-7" />
+            </div>
+            <span className="text-[10px] font-black text-white uppercase tracking-tighter">{reel.likes}</span>
+          </div>
+
+          <div className="flex flex-col items-center gap-1 group/btn">
+            <div className="p-4 rounded-[1.5rem] bg-white/10 backdrop-blur-xl border border-white/20 hover:bg-primary hover:text-white transition-all cursor-pointer group-hover/btn:scale-110">
+              <MessageCircle className="w-7 h-7" />
+            </div>
+            <span className="text-[10px] font-black text-white uppercase tracking-tighter">{reel.comments}</span>
+          </div>
+
+          <div className="flex flex-col items-center gap-1 group/btn">
+            <div className="p-4 rounded-[1.5rem] bg-white/10 backdrop-blur-xl border border-white/20 hover:bg-accent hover:text-white transition-all cursor-pointer group-hover/btn:scale-110">
+              <Share2 className="w-7 h-7" />
+            </div>
+            <span className="text-[10px] font-black text-white uppercase tracking-tighter">SHARE</span>
+          </div>
+
+          <Button variant="ghost" size="icon" className="text-white/50 hover:text-white">
+            <MoreVertical className="w-6 h-6" />
+          </Button>
+
+          <div className="w-12 h-12 rounded-2xl border-2 border-white/20 overflow-hidden animate-[spin_6s_linear_infinite] shadow-xl">
+            <img src={`https://picsum.photos/seed/music${reel.id}/100/100`} className="w-full h-full object-cover" />
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

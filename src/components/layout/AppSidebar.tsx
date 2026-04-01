@@ -72,7 +72,7 @@ export function AppSidebar() {
         </div>
       </div>
 
-      <div className="hidden xl:block p-5 rounded-3xl bg-gradient-to-br from-primary/20 via-primary/5 to-accent/20 border border-white/10 backdrop-blur-xl group overflow-hidden relative">
+      <div className="hidden xl:block p-5 rounded-[2rem] bg-gradient-to-br from-primary/20 via-primary/5 to-accent/20 border border-white/10 backdrop-blur-xl group overflow-hidden relative">
         <div className="absolute -right-4 -top-4 w-16 h-16 bg-primary/20 rounded-full blur-2xl group-hover:bg-primary/40 transition-all" />
         <p className="text-sm font-black text-primary uppercase mb-1 tracking-tighter">Nova Pro</p>
         <p className="text-[11px] text-muted-foreground leading-snug mb-4">Desbloquea el futuro con funciones exclusivas de IA.</p>

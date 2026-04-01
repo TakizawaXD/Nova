@@ -16,7 +16,8 @@ import {
   getDoc,
   Timestamp,
   arrayUnion,
-  arrayRemove
+  arrayRemove,
+  FirestoreError
 } from 'firebase/firestore';
 import { db } from './firebase';
 
@@ -57,6 +58,8 @@ export interface UserProfile {
   bio: string;
   location?: string;
   website?: string;
+  birthday?: string;
+  gender?: string;
   followersCount: number;
   followingCount: number;
   isVerified?: boolean;
@@ -130,10 +133,13 @@ export const createPost = async (postData: Omit<Post, 'createdAt'>) => {
   });
 };
 
-export const subscribeToPosts = (callback: (posts: Post[]) => void) => {
+export const subscribeToPosts = (callback: (posts: Post[]) => void, errorCallback?: (error: FirestoreError) => void) => {
   const q = query(collection(db, 'posts'), orderBy('createdAt', 'desc'), limit(50));
   return onSnapshot(q, (snapshot) => {
     callback(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Post[]);
+  }, (error) => {
+    console.error("Error subscribing to posts:", error);
+    if (errorCallback) errorCallback(error);
   });
 };
 

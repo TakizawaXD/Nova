@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/context/AuthContext';
+import { novaAssistant } from '@/ai/flows/nova-ai-flow';
 
 export function NovaAI() {
   const { profile } = useAuth();
@@ -17,18 +18,18 @@ export function NovaAI() {
   const [isTyping, setIsTyping] = useState(false);
   const [messages, setMessages] = useState<{ role: 'user' | 'ai', content: string }[]>([]);
   const [input, setInput] = useState('');
+  const [suggestions, setSuggestions] = useState<string[]>(['Resumir feed', 'Escribir post', 'Optimizar perfil']);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (profile && messages.length === 0) {
       setMessages([
-        { role: 'ai', content: `Hola ${profile.displayName.split(' ')[0]}, soy NovaAI. He analizado tu perfil y estoy lista para ayudarte a optimizar tu experiencia en Nova. ¿Quieres que te sugiera algunas tendencias o que redacte un post por ti?` }
+        { role: 'ai', content: `Hola ${profile.displayName.split(' ')[0]}, soy NovaAI. He analizado tu perfil y estoy lista para ayudarte a optimizar tu experiencia en Nova. ¿En qué puedo asistirte hoy?` }
       ]);
     }
   }, [profile]);
 
   useEffect(() => {
-    // Scroll to bottom on new messages
     if (scrollAreaRef.current) {
       const scrollContainer = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]');
       if (scrollContainer) {
@@ -37,27 +38,28 @@ export function NovaAI() {
     }
   }, [messages, isTyping]);
 
-  const handleSend = async () => {
-    if (!input.trim()) return;
+  const handleSend = async (forcedText?: string) => {
+    const textToSend = forcedText || input;
+    if (!textToSend.trim() || !profile) return;
     
-    const userMessage = input;
-    setMessages(prev => [...prev, { role: 'user', content: userMessage }]);
+    setMessages(prev => [...prev, { role: 'user', content: textToSend }]);
     setInput('');
     setIsTyping(true);
 
-    // Mock AI Logic (Próximo paso: conectar con Genkit real)
-    setTimeout(() => {
-      let response = "Interesante. Basado en los algoritmos de NovaSphere, te sugiero usar el hashtag #NovaFuture para tu próxima publicación.";
-      
-      if (userMessage.toLowerCase().includes('resumir')) {
-        response = "He analizado los últimos 50 posts de tu feed. La tendencia principal es la computación cuántica y el diseño minimalista.";
-      } else if (userMessage.toLowerCase().includes('post')) {
-        response = "Aquí tienes una idea para un post: 'Explorando las fronteras digitales de #NovaSphere. El futuro es ahora. 🚀'";
-      }
+    try {
+      const result = await novaAssistant({
+        userMessage: textToSend,
+        userName: profile.displayName,
+        context: "Página principal de Nova"
+      });
 
-      setMessages(prev => [...prev, { role: 'ai', content: response }]);
+      setMessages(prev => [...prev, { role: 'ai', content: result.response }]);
+      if (result.suggestions) setSuggestions(result.suggestions);
+    } catch (error) {
+      setMessages(prev => [...prev, { role: 'ai', content: "Lo siento, mi conexión con el núcleo cuántico ha fallado. Inténtalo de nuevo." }]);
+    } finally {
       setIsTyping(false);
-    }, 1500);
+    }
   };
 
   return (
@@ -112,22 +114,18 @@ export function NovaAI() {
                   placeholder="Envía una instrucción a NovaAI..." 
                   className="bg-black/20 border-white/10 h-11 rounded-xl text-xs placeholder:text-white/30"
                 />
-                <Button onClick={handleSend} size="icon" className="h-11 w-11 shrink-0 bg-primary hover:bg-primary/80 rounded-xl electric-glow">
+                <Button onClick={() => handleSend()} size="icon" className="h-11 w-11 shrink-0 bg-primary hover:bg-primary/80 rounded-xl electric-glow">
                   <Send className="w-4 h-4" />
                 </Button>
               </div>
               <div className="mt-3 flex gap-2 overflow-x-auto scroll-hide">
-                {[
-                  { tag: 'Resumir feed', icon: <MessageSquareText className="w-3 h-3" /> },
-                  { tag: 'Escribir post', icon: <Sparkles className="w-3 h-3" /> },
-                  { tag: 'Optimizar perfil', icon: <Bot className="w-3 h-3" /> }
-                ].map(item => (
+                {suggestions.map(tag => (
                   <button 
-                    key={item.tag} 
-                    onClick={() => setInput(item.tag)}
+                    key={tag} 
+                    onClick={() => handleSend(tag)}
                     className="px-3 py-1.5 bg-white/5 border border-white/10 rounded-lg text-[10px] font-bold text-white/70 whitespace-nowrap hover:bg-primary/20 hover:border-primary/50 hover:text-white transition-all flex items-center gap-1.5"
                   >
-                    {item.icon} {item.tag}
+                    <Sparkles className="w-3 h-3" /> {tag}
                   </button>
                 ))}
               </div>

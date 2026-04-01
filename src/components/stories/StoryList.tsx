@@ -1,45 +1,83 @@
-import { Plus } from 'lucide-react';
+
+'use client';
+
+import { useState, useEffect } from 'react';
+import { Plus, Loader2 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { PlaceHolderImages } from '@/lib/placeholder-images';
+import { useAuth } from '@/context/AuthContext';
+import { subscribeToActiveStories, createStory, Story } from '@/lib/db';
+import { useToast } from '@/hooks/use-toast';
 
 export function StoryList() {
-  const userAvatar = PlaceHolderImages.find(img => img.id === 'avatar-user');
-  
-  // Mock stories
-  const stories = [
-    { id: 1, name: 'Maya J.', avatar: 'https://picsum.photos/seed/s1/100/100', active: true },
-    { id: 2, name: 'Leo K.', avatar: 'https://picsum.photos/seed/s2/100/100', active: true },
-    { id: 3, name: 'Sarah S.', avatar: 'https://picsum.photos/seed/s3/100/100', active: false },
-    { id: 4, name: 'David B.', avatar: 'https://picsum.photos/seed/s4/100/100', active: true },
-    { id: 5, name: 'Emma W.', avatar: 'https://picsum.photos/seed/s5/100/100', active: true },
-    { id: 6, name: 'Chris T.', avatar: 'https://picsum.photos/seed/s6/100/100', active: false },
-    { id: 7, name: 'Sophie L.', avatar: 'https://picsum.photos/seed/s7/100/100', active: true },
-  ];
+  const { user, profile } = useAuth();
+  const { toast } = useToast();
+  const [stories, setStories] = useState<Story[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const unsubscribe = subscribeToActiveStories((data) => {
+      setStories(data);
+      setLoading(false);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  const handleAddStory = async () => {
+    if (!user || !profile) return;
+    try {
+      // Usamos una imagen de picsum por ahora como demostración
+      const mockImage = `https://picsum.photos/seed/${Math.random()}/1080/1920`;
+      await createStory(user.uid, profile.displayName, profile.photoURL, mockImage);
+      toast({
+        title: "Historia publicada",
+        description: "Tu historia será visible por 24 horas.",
+      });
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "No se pudo publicar la historia.",
+      });
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center gap-4 overflow-x-auto pb-4 scroll-hide">
+        <Loader2 className="w-6 h-6 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="flex items-center gap-4 overflow-x-auto pb-4 scroll-hide">
-      <div className="flex flex-col items-center gap-1.5 shrink-0 cursor-pointer group">
+      <div 
+        onClick={handleAddStory}
+        className="flex flex-col items-center gap-1.5 shrink-0 cursor-pointer group"
+      >
         <div className="relative h-16 w-16 rounded-full border-2 border-dashed border-muted-foreground p-0.5 group-hover:border-primary transition-all">
           <Avatar className="h-full w-full">
-            <AvatarImage src={userAvatar?.imageUrl} alt="My story" />
+            <AvatarImage src={profile?.photoURL} alt="Mi historia" />
             <AvatarFallback>U</AvatarFallback>
           </Avatar>
           <div className="absolute bottom-0 right-0 bg-primary text-white rounded-full p-0.5 border-2 border-background">
             <Plus className="w-3 h-3" />
           </div>
         </div>
-        <span className="text-[10px] font-medium text-muted-foreground group-hover:text-foreground transition-colors">My Story</span>
+        <span className="text-[10px] font-medium text-muted-foreground group-hover:text-foreground transition-colors">Añadir</span>
       </div>
 
       {stories.map((story) => (
         <div key={story.id} className="flex flex-col items-center gap-1.5 shrink-0 cursor-pointer group">
-          <div className={`h-16 w-16 rounded-full p-0.5 border-2 transition-all ${story.active ? 'border-primary ring-2 ring-primary/20' : 'border-muted-foreground/30 grayscale opacity-50'}`}>
+          <div className="h-16 w-16 rounded-full p-0.5 border-2 border-primary ring-2 ring-primary/20 transition-all">
             <Avatar className="h-full w-full">
-              <AvatarImage src={story.avatar} alt={story.name} />
-              <AvatarFallback>{story.name[0]}</AvatarFallback>
+              <AvatarImage src={story.authorAvatar} alt={story.authorName} />
+              <AvatarFallback>{story.authorName[0]}</AvatarFallback>
             </Avatar>
           </div>
-          <span className="text-[10px] font-medium text-muted-foreground group-hover:text-foreground transition-colors">{story.name}</span>
+          <span className="text-[10px] font-medium text-muted-foreground group-hover:text-foreground transition-colors truncate w-16 text-center">
+            {story.authorName.split(' ')[0]}
+          </span>
         </div>
       ))}
     </div>

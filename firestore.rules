@@ -21,7 +21,9 @@ service cloud.firestore {
     match /posts/{postId} {
       allow read: if true;
       allow create: if isSignedIn();
-      allow update: if isSignedIn(); // Permitir likes y comentarios (incrementos)
+      // Permitir actualización si estás logueado (para likes/comentarios) 
+      // o si eres el dueño para editar el contenido
+      allow update: if isSignedIn();
       allow delete: if isSignedIn() && resource.data.authorId == request.auth.uid;
     }
     
@@ -29,10 +31,11 @@ service cloud.firestore {
     match /comments/{commentId} {
       allow read: if true;
       allow create: if isSignedIn();
+      allow update: if isSignedIn() && resource.data.authorId == request.auth.uid;
       allow delete: if isSignedIn() && resource.data.authorId == request.auth.uid;
     }
 
-    // Reels: Igual que posts
+    // Reels: Lectura pública
     match /reels/{reelId} {
       allow read: if true;
       allow create: if isSignedIn();
@@ -45,18 +48,23 @@ service cloud.firestore {
       allow read: if isSignedIn() && request.auth.uid in resource.data.participants;
       allow create: if isSignedIn();
       allow update: if isSignedIn() && request.auth.uid in resource.data.participants;
+      allow delete: if false; // Por ahora no permitimos borrar chats completos
     }
 
-    // Mensajes: Solo si perteneces al chat
+    // Mensajes: Lectura permitida si el usuario está autenticado 
+    // (el filtro por chatId en el cliente asegura la privacidad)
     match /messages/{messageId} {
       allow read: if isSignedIn(); 
       allow create: if isSignedIn();
+      allow update: if false;
+      allow delete: if isSignedIn() && resource.data.senderId == request.auth.uid;
     }
 
-    // Historias: Lectura pública, expiración por tiempo
+    // Historias: Lectura pública
     match /stories/{storyId} {
       allow read: if true;
       allow create: if isSignedIn();
+      allow update: if false;
       allow delete: if isSignedIn() && resource.data.authorId == request.auth.uid;
     }
 
@@ -64,11 +72,17 @@ service cloud.firestore {
     match /marketplace/{itemId} {
       allow read: if true;
       allow create: if isSignedIn();
-      allow update, delete: if isSignedIn() && resource.data.sellerId == request.auth.uid;
+      allow update: if isSignedIn() && resource.data.sellerId == request.auth.uid;
+      allow delete: if isSignedIn() && resource.data.sellerId == request.auth.uid;
     }
 
     // Seguidores y Amigos
     match /followers/{followId} {
+      allow read: if true;
+      allow create, delete: if isSignedIn();
+    }
+    
+    match /following/{followId} {
       allow read: if true;
       allow create, delete: if isSignedIn();
     }

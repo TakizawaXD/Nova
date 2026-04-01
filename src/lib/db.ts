@@ -145,10 +145,15 @@ export const subscribeToPosts = (callback: (posts: Post[]) => void, errorCallbac
 
 export const toggleLikePost = async (postId: string, userId: string, isLiked: boolean) => {
   const postRef = doc(db, 'posts', postId);
-  await updateDoc(postRef, {
-    likes: increment(isLiked ? -1 : 1),
-    likedBy: isLiked ? arrayRemove(userId) : arrayUnion(userId)
-  });
+  try {
+    await updateDoc(postRef, {
+      likes: increment(isLiked ? -1 : 1),
+      likedBy: isLiked ? arrayRemove(userId) : arrayUnion(userId)
+    });
+  } catch (error) {
+    console.error("Error toggling like:", error);
+    throw error;
+  }
 };
 
 export const addComment = async (commentData: Omit<Comment, 'createdAt'>) => {
@@ -170,6 +175,7 @@ export const subscribeToComments = (postId: string, callback: (comments: Comment
 // --- FUNCIONES DE CHAT ---
 
 export const subscribeToUserChats = (userId: string, callback: (chats: any[]) => void) => {
+  if (!userId) return () => {};
   const q = query(
     collection(db, 'chats'),
     where('participants', 'array-contains', userId),
@@ -177,6 +183,8 @@ export const subscribeToUserChats = (userId: string, callback: (chats: any[]) =>
   );
   return onSnapshot(q, (snapshot) => {
     callback(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+  }, (error) => {
+    console.error("Error subscribing to user chats:", error);
   });
 };
 
@@ -195,9 +203,12 @@ export const sendMessage = async (chatId: string, senderId: string, text: string
 };
 
 export const subscribeToMessages = (chatId: string, callback: (messages: Message[]) => void) => {
+  if (!chatId) return () => {};
   const q = query(collection(db, 'messages'), where('chatId', '==', chatId), orderBy('createdAt', 'asc'));
   return onSnapshot(q, (snapshot) => {
     callback(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Message[]);
+  }, (error) => {
+    console.error("Error subscribing to messages:", error);
   });
 };
 

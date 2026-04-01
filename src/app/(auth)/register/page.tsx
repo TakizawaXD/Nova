@@ -94,10 +94,22 @@ export default function RegisterPage() {
       
       router.push('/');
     } catch (error: any) {
+      console.error("🔥 DETALLE COMPLETO DEL ERROR DE FIREBASE:");
+      console.error("Código:", error.code);
+      console.error("Mensaje:", error.message);
+      console.error("Payload completo:", error);
+      
+      let friendlyMessage = error.message || 'Ocurrió un error inesperado al registrarte.';
+      if (error.code === 'auth/operation-not-allowed') {
+        friendlyMessage = 'El registro por correo está desactivado en la consola de Firebase. Debes habilitarlo en Authentication > Sign-in method.';
+      } else if (error.code === 'auth/email-already-in-use') {
+        friendlyMessage = 'Este correo ya está registrado en la base de datos.';
+      }
+
       toast({
         variant: 'destructive',
         title: 'Error de registro',
-        description: error.message || 'Ocurrió un error inesperado.',
+        description: friendlyMessage,
       });
     } finally {
       setLoading(false);

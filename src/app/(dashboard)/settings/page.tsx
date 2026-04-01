@@ -12,6 +12,7 @@ import { User, Shield, Bell, Moon, Sun, Languages, Trash2, Key, LogOut } from 'l
 import { auth } from '@/lib/firebase';
 import { signOut } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
+import { cn } from '@/lib/utils';
 
 export default function SettingsPage() {
   const { profile } = useAuth();

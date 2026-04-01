@@ -8,6 +8,8 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
 
+import { CreatePost } from '@/components/feed/CreatePost';
+
 export default function ExplorePage() {
   const [recommendations, setRecommendations] = useState<AiEnhancedPostDiscoveryOutput | null>(null);
   const [loading, setLoading] = useState(true);
@@ -24,7 +26,15 @@ export default function ExplorePage() {
       const result = await discoverPopularPosts({ popularPosts: mockPopularPosts });
       setRecommendations(result);
     } catch (error) {
-      console.error("Error al obtener recomendaciones de IA", error);
+      console.error("Error de clave API de Google AI. Cargando recomendaciones curadas locales:", error);
+      // Fallback seguro cuando no hay API Key
+      setRecommendations({
+        recommendedPosts: [
+          { postId: '1', summary: 'Fotografía Espacial', originalContent: 'Increíble atardecer en la colonia marciana hoy. ¡Los tonos azules son impresionantes!' },
+          { postId: '2', summary: 'Avance Cuántico', originalContent: 'Nuevo avance en computación cuántica permite algoritmos sociales 1000 veces más rápidos. #ElFuturoEstáAquí' },
+          { postId: '3', summary: 'Realidad Virtual Nova', originalContent: 'Por qué todo el mundo habla de las nuevas pieles de Realidad Virtual en Nova. #VR #Diseño' }
+        ]
+      });
     } finally {
       setLoading(false);
     }
@@ -54,6 +64,8 @@ export default function ExplorePage() {
           Refrescar Descubrimientos
         </Button>
       </div>
+
+      <CreatePost />
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {loading ? (

@@ -1,14 +1,13 @@
-
 'use client';
 
 import { useState } from 'react';
-import { signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
+import { signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, GithubAuthProvider, FacebookAuthProvider } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Sparkles, LogIn, Github } from 'lucide-react';
+import { Sparkles, LogIn, Github, Facebook } from 'lucide-react';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
 
@@ -36,13 +35,21 @@ export default function LoginPage() {
     }
   };
 
-  const loginWithGoogle = async () => {
-    const provider = new GoogleAuthProvider();
+  const loginWithProvider = async (providerName: 'google' | 'github' | 'facebook') => {
+    let provider;
+    if (providerName === 'google') provider = new GoogleAuthProvider();
+    else if (providerName === 'github') provider = new GithubAuthProvider();
+    else provider = new FacebookAuthProvider();
+
     try {
       await signInWithPopup(auth, provider);
       router.push('/');
-    } catch (error) {
-      console.error(error);
+    } catch (error: any) {
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'No se pudo iniciar sesión con ' + providerName,
+      });
     }
   };
 
@@ -91,13 +98,18 @@ export default function LoginPage() {
             <div className="relative flex justify-center text-xs uppercase"><span className="bg-transparent px-2 text-muted-foreground font-black tracking-widest">O continúa con</span></div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <Button variant="outline" onClick={loginWithGoogle} className="rounded-2xl border-white/10 bg-white/5 hover:bg-white/10 h-12 gap-2 font-bold text-xs uppercase">
+          <div className="grid grid-cols-1 gap-3">
+            <Button variant="outline" onClick={() => loginWithProvider('google')} className="rounded-2xl border-white/10 bg-white/5 hover:bg-white/10 h-12 gap-2 font-bold text-xs uppercase">
               <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" className="w-4 h-4" /> Google
             </Button>
-            <Button variant="outline" className="rounded-2xl border-white/10 bg-white/5 hover:bg-white/10 h-12 gap-2 font-bold text-xs uppercase">
-              <Github className="w-4 h-4" /> GitHub
-            </Button>
+            <div className="grid grid-cols-2 gap-3">
+              <Button variant="outline" onClick={() => loginWithProvider('github')} className="rounded-2xl border-white/10 bg-white/5 hover:bg-white/10 h-12 gap-2 font-bold text-xs uppercase">
+                <Github className="w-4 h-4" /> GitHub
+              </Button>
+              <Button variant="outline" onClick={() => loginWithProvider('facebook')} className="rounded-2xl border-white/10 bg-white/5 hover:bg-white/10 h-12 gap-2 font-bold text-xs uppercase">
+                <Facebook className="w-4 h-4 text-blue-500" /> Facebook
+              </Button>
+            </div>
           </div>
 
           <p className="text-center text-xs text-muted-foreground">

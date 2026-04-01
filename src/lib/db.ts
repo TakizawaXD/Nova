@@ -113,6 +113,7 @@ export interface Reel {
 // --- FUNCIONES DE USUARIO ---
 
 export const isUsernameAvailable = async (username: string) => {
+  if (!username) return true;
   const q = query(collection(db, 'users'), where('username', '==', username.toLowerCase()));
   const snapshot = await getDocs(q);
   return snapshot.empty;
@@ -138,7 +139,7 @@ export const subscribeToPosts = (callback: (posts: Post[]) => void, errorCallbac
   return onSnapshot(q, (snapshot) => {
     callback(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Post[]);
   }, (error) => {
-    console.error("Error subscribing to posts:", error);
+    console.warn("Permission issue or query failed in posts:", error);
     if (errorCallback) errorCallback(error);
   });
 };
@@ -166,9 +167,12 @@ export const addComment = async (commentData: Omit<Comment, 'createdAt'>) => {
 };
 
 export const subscribeToComments = (postId: string, callback: (comments: Comment[]) => void) => {
+  if (!postId) return () => {};
   const q = query(collection(db, 'comments'), where('postId', '==', postId), orderBy('createdAt', 'asc'));
   return onSnapshot(q, (snapshot) => {
     callback(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Comment[]);
+  }, (error) => {
+    console.warn("Permission issue in comments:", error);
   });
 };
 
@@ -176,16 +180,21 @@ export const subscribeToComments = (postId: string, callback: (comments: Comment
 
 export const subscribeToUserChats = (userId: string, callback: (chats: any[]) => void) => {
   if (!userId) return () => {};
-  const q = query(
-    collection(db, 'chats'),
-    where('participants', 'array-contains', userId),
-    orderBy('updatedAt', 'desc')
-  );
-  return onSnapshot(q, (snapshot) => {
-    callback(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-  }, (error) => {
-    console.error("Error subscribing to user chats:", error);
-  });
+  try {
+    const q = query(
+      collection(db, 'chats'),
+      where('participants', 'array-contains', userId),
+      orderBy('updatedAt', 'desc')
+    );
+    return onSnapshot(q, (snapshot) => {
+      callback(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+    }, (error) => {
+      console.warn("Error subscribing to user chats:", error);
+    });
+  } catch (e) {
+    console.error("Query formation error in chats:", e);
+    return () => {};
+  }
 };
 
 export const sendMessage = async (chatId: string, senderId: string, text: string) => {
@@ -208,7 +217,7 @@ export const subscribeToMessages = (chatId: string, callback: (messages: Message
   return onSnapshot(q, (snapshot) => {
     callback(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Message[]);
   }, (error) => {
-    console.error("Error subscribing to messages:", error);
+    console.warn("Error subscribing to messages:", error);
   });
 };
 
@@ -218,6 +227,8 @@ export const subscribeToMarketplace = (callback: (items: MarketItem[]) => void) 
   const q = query(collection(db, 'marketplace'), orderBy('createdAt', 'desc'));
   return onSnapshot(q, (snapshot) => {
     callback(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as MarketItem[]);
+  }, (error) => {
+    console.warn("Marketplace permissions issue:", error);
   });
 };
 
@@ -239,6 +250,8 @@ export const subscribeToActiveStories = (callback: (stories: Story[]) => void) =
   const q = query(collection(db, 'stories'), where('expiresAt', '>', now));
   return onSnapshot(q, (snapshot) => {
     callback(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Story[]);
+  }, (error) => {
+    console.warn("Stories permissions issue:", error);
   });
 };
 
@@ -246,5 +259,7 @@ export const subscribeToReels = (callback: (reels: Reel[]) => void) => {
   const q = query(collection(db, 'reels'), orderBy('createdAt', 'desc'), limit(20));
   return onSnapshot(q, (snapshot) => {
     callback(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Reel[]);
+  }, (error) => {
+    console.warn("Reels permissions issue:", error);
   });
 };

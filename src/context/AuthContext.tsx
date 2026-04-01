@@ -27,23 +27,29 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setUser(firebaseUser);
       
       if (firebaseUser) {
-        // Suscribirse al perfil en tiempo real
+        // Suscribirse al perfil en tiempo real de forma segura
         const profileRef = doc(db, 'users', firebaseUser.uid);
+        
         const unsubscribeProfile = onSnapshot(
           profileRef, 
           (snapshot) => {
             if (snapshot.exists()) {
               setProfile({ ...snapshot.data(), uid: firebaseUser.uid });
             } else {
-              setProfile(null);
+              // Si el documento no existe (recién registrado), evitamos dejarlo en null indefinidamente
+              setProfile({
+                uid: firebaseUser.uid,
+                displayName: firebaseUser.displayName || 'Ciudadano Nova',
+                username: 'usuario_' + firebaseUser.uid.substring(0, 5),
+                photoURL: firebaseUser.photoURL || `https://picsum.photos/seed/${firebaseUser.uid}/200/200`
+              });
             }
             setLoading(false);
           },
           (error) => {
-            console.error("Error al suscribirse al perfil:", error);
-            // Si hay error de permisos o no existe, permitimos que la app cargue 
-            // pero sin perfil completo.
-            setProfile(null);
+            console.error("Error al suscribirse al perfil (posibles reglas):", error);
+            // Fallback para no bloquear la UI si las reglas fallan
+            setProfile({ uid: firebaseUser.uid, displayName: 'Usuario Nova' });
             setLoading(false);
           }
         );

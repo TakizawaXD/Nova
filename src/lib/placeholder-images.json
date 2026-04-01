@@ -1,3 +1,40 @@
 {
-  "placeholderImages": []
+  "placeholderImages": [
+    {
+      "id": "avatar-user",
+      "description": "Professional user avatar",
+      "imageUrl": "https://picsum.photos/seed/user123/200/200",
+      "imageHint": "portrait person"
+    },
+    {
+      "id": "post-city",
+      "description": "Futuristic city landscape",
+      "imageUrl": "https://picsum.photos/seed/city88/800/600",
+      "imageHint": "cyberpunk city"
+    },
+    {
+      "id": "post-nature",
+      "description": "Serene nature shot",
+      "imageUrl": "https://picsum.photos/seed/nature22/800/600",
+      "imageHint": "abstract landscape"
+    },
+    {
+      "id": "story-1",
+      "description": "User story image 1",
+      "imageUrl": "https://picsum.photos/seed/st1/400/600",
+      "imageHint": "lifestyle photography"
+    },
+    {
+      "id": "reel-1",
+      "description": "Short video thumbnail",
+      "imageUrl": "https://picsum.photos/seed/rl1/1080/1920",
+      "imageHint": "vertical action"
+    },
+    {
+      "id": "market-1",
+      "description": "Gadget for sale",
+      "imageUrl": "https://picsum.photos/seed/mk1/400/400",
+      "imageHint": "modern tech gadget"
+    }
+  ]
 }

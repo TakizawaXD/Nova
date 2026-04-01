@@ -6,18 +6,18 @@ import { cn } from '@/lib/utils';
 import { usePathname } from 'next/navigation';
 
 const menuItems = [
-  { label: 'Feed', icon: Home, href: '/' },
-  { label: 'Explore', icon: Compass, href: '/explore' },
-  { label: 'Chats', icon: MessageCircle, href: '/messages' },
-  { label: 'Stories', icon: History, href: '/stories' },
+  { label: 'Inicio', icon: Home, href: '/' },
+  { label: 'Explorar', icon: Compass, href: '/explore' },
+  { label: 'Mensajes', icon: MessageCircle, href: '/messages' },
+  { label: 'Historias', icon: History, href: '/stories' },
   { label: 'Reels', icon: PlayCircle, href: '/reels' },
-  { label: 'Communities', icon: Users, href: '/groups' },
-  { label: 'Marketplace', icon: ShoppingBag, href: '/marketplace' },
+  { label: 'Grupos', icon: Users, href: '/groups' },
+  { label: 'Tienda', icon: ShoppingBag, href: '/marketplace' },
 ];
 
 const secondaryItems = [
-  { label: 'Profile', icon: UserCircle, href: '/profile' },
-  { label: 'Settings', icon: Settings, href: '/settings' },
+  { label: 'Perfil', icon: UserCircle, href: '/profile' },
+  { label: 'Ajustes', icon: Settings, href: '/settings' },
   { label: 'Admin', icon: ShieldCheck, href: '/admin' },
 ];
 
@@ -48,7 +48,7 @@ export function AppSidebar() {
         <div className="h-px bg-white/5 xl:mx-4" />
 
         <div className="space-y-1">
-          <p className="hidden xl:block px-4 text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-2">Account</p>
+          <p className="hidden xl:block px-4 text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-2">Cuenta</p>
           {secondaryItems.map((item) => (
             <Link 
               key={item.href} 
@@ -69,8 +69,8 @@ export function AppSidebar() {
 
       <div className="hidden xl:block p-4 rounded-2xl bg-gradient-to-br from-primary/10 to-accent/10 border border-primary/20">
         <p className="text-xs font-bold text-primary uppercase mb-1">Nova Plus</p>
-        <p className="text-[10px] text-muted-foreground leading-tight mb-3">Get verified and access exclusive beta features.</p>
-        <button className="w-full py-2 bg-primary text-white text-xs font-bold rounded-lg hover:bg-primary/90 transition-all">Upgrade Now</button>
+        <p className="text-[10px] text-muted-foreground leading-tight mb-3">Verifícate y accede a funciones exclusivas.</p>
+        <button className="w-full py-2 bg-primary text-white text-xs font-bold rounded-lg hover:bg-primary/90 transition-all">Mejorar Ahora</button>
       </div>
     </aside>
   );

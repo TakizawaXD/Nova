@@ -30,7 +30,7 @@ export function PostCard({ author, content, image, timestamp, likes, comments, s
           <div>
             <div className="flex items-center gap-1">
               <span className="font-bold text-sm hover:text-primary transition-colors cursor-pointer">{author.name}</span>
-              <span className="text-[10px] bg-primary/20 text-primary px-1.5 py-0.5 rounded-full font-bold">VERIFIED</span>
+              <span className="text-[10px] bg-primary/20 text-primary px-1.5 py-0.5 rounded-full font-bold">VERIFICADO</span>
             </div>
             <p className="text-xs text-muted-foreground">@{author.handle} • {timestamp}</p>
           </div>
@@ -46,7 +46,7 @@ export function PostCard({ author, content, image, timestamp, likes, comments, s
           <div className="relative aspect-[4/3] w-full rounded-2xl overflow-hidden border border-white/5">
             <Image 
               src={image} 
-              alt="Post media" 
+              alt="Contenido del post" 
               fill 
               className="object-cover"
               data-ai-hint="post image"

@@ -11,13 +11,13 @@ export function Navbar() {
     <nav className="sticky top-0 z-40 w-full glass border-b border-white/5 px-4 h-16 flex items-center justify-between">
       <div className="flex items-center gap-8">
         <div className="text-2xl font-black bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent tracking-tighter cursor-pointer">
-          NOVASPHERE
+          NOVA
         </div>
         <div className="hidden md:flex relative w-80">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input 
             className="pl-10 bg-secondary/50 border-none focus-visible:ring-primary/30" 
-            placeholder="Search the sphere..." 
+            placeholder="Buscar en Nova..." 
           />
         </div>
       </div>
@@ -42,7 +42,7 @@ export function Navbar() {
             <span className="text-[10px] text-muted-foreground uppercase tracking-widest">Premium</span>
           </div>
           <Avatar className="h-9 w-9 border-2 border-primary/20 group-hover:border-primary transition-all ring-offset-background group-hover:ring-2 ring-primary/20">
-            <AvatarImage src={avatar?.imageUrl} alt="User" />
+            <AvatarImage src={avatar?.imageUrl} alt="Usuario" />
             <AvatarFallback>AR</AvatarFallback>
           </Avatar>
         </div>

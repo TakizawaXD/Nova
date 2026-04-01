@@ -15,17 +15,16 @@ export default function ExplorePage() {
   const fetchAIRecommendations = async () => {
     setLoading(true);
     try {
-      // Mock some popular posts to send to the AI
       const mockPopularPosts = [
-        { id: '1', content: 'Incredible sunset over the Martian colony today. The blue hues are breathtaking!', likes: 5000, comments: 400, shares: 1200 },
-        { id: '2', content: 'New breakthrough in quantum computing allows for 1000x faster social algorithms. #FutureIsHere', likes: 2300, comments: 150, shares: 800 },
-        { id: '3', content: 'Why everyone is talking about the new Virtual Reality skins in NovaSphere. #VR #SkinDesign', likes: 12000, comments: 2000, shares: 5000 },
+        { id: '1', content: 'Increíble atardecer en la colonia marciana hoy. ¡Los tonos azules son impresionantes!', likes: 5000, comments: 400, shares: 1200 },
+        { id: '2', content: 'Nuevo avance en computación cuántica permite algoritmos sociales 1000 veces más rápidos. #ElFuturoEstáAquí', likes: 2300, comments: 150, shares: 800 },
+        { id: '3', content: 'Por qué todo el mundo habla de las nuevas pieles de Realidad Virtual en Nova. #VR #Diseño', likes: 12000, comments: 2000, shares: 5000 },
       ];
 
       const result = await discoverPopularPosts({ popularPosts: mockPopularPosts });
       setRecommendations(result);
     } catch (error) {
-      console.error("Failed to fetch AI discovery posts", error);
+      console.error("Error al obtener recomendaciones de IA", error);
     } finally {
       setLoading(false);
     }
@@ -40,10 +39,10 @@ export default function ExplorePage() {
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
           <h1 className="text-4xl font-black tracking-tighter flex items-center gap-3">
-            EXPLORE THE <span className="text-primary">SPHERE</span>
+            EXPLORA TU <span className="text-primary">MUNDO</span>
             <Sparkles className="w-8 h-8 text-accent animate-pulse" />
           </h1>
-          <p className="text-muted-foreground mt-2">AI-curated content discovered just for your taste.</p>
+          <p className="text-muted-foreground mt-2">Contenido curado por IA según tus gustos.</p>
         </div>
         <Button 
           onClick={fetchAIRecommendations} 
@@ -52,7 +51,7 @@ export default function ExplorePage() {
           className="rounded-xl glass border-primary/20 text-primary hover:bg-primary/10 gap-2"
         >
           <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-          Refresh Discovery
+          Refrescar Descubrimientos
         </Button>
       </div>
 
@@ -76,10 +75,10 @@ export default function ExplorePage() {
                 <img 
                   src={`https://picsum.photos/seed/exp${post.postId}/600/400`} 
                   className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" 
-                  alt="Post visual"
+                  alt="Visual del post"
                 />
                 <div className="absolute top-4 left-4 z-20">
-                  <span className="bg-primary/90 backdrop-blur-md text-white text-[10px] font-black px-2 py-1 rounded-full uppercase tracking-tighter">AI PICK</span>
+                  <span className="bg-primary/90 backdrop-blur-md text-white text-[10px] font-black px-2 py-1 rounded-full uppercase tracking-tighter">IA ELIGE</span>
                 </div>
               </div>
               <CardHeader className="p-6 flex-1">
@@ -97,10 +96,10 @@ export default function ExplorePage() {
                       <AvatarImage src={`https://picsum.photos/seed/u${post.postId}/50/50`} />
                       <AvatarFallback>U</AvatarFallback>
                     </Avatar>
-                    <span className="text-xs font-medium text-muted-foreground">Original Author</span>
+                    <span className="text-xs font-medium text-muted-foreground">Autor Original</span>
                   </div>
                   <Button variant="ghost" size="sm" className="rounded-full gap-2 hover:bg-primary/10 hover:text-primary">
-                    View Post <Eye className="w-4 h-4" />
+                    Ver Post <Eye className="w-4 h-4" />
                   </Button>
                 </div>
               </CardContent>

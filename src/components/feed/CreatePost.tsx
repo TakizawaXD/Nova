@@ -11,12 +11,12 @@ export function CreatePost() {
     <div className="glass border-white/5 rounded-3xl p-4 mb-8">
       <div className="flex gap-4">
         <Avatar className="h-10 w-10 border-2 border-primary/20">
-          <AvatarImage src={avatar?.imageUrl} alt="User" />
+          <AvatarImage src={avatar?.imageUrl} alt="Usuario" />
           <AvatarFallback>U</AvatarFallback>
         </Avatar>
         <div className="flex-1 space-y-4">
           <Textarea 
-            placeholder="What's happening in your sphere?" 
+            placeholder="¿Qué está pasando en tu mundo?" 
             className="bg-transparent border-none focus-visible:ring-0 text-lg resize-none min-h-[100px] p-0 placeholder:text-muted-foreground/50"
           />
           <div className="flex items-center justify-between pt-2 border-t border-white/5">
@@ -38,7 +38,7 @@ export function CreatePost() {
               </Button>
             </div>
             <Button className="rounded-full bg-primary hover:bg-primary/90 px-6 gap-2 font-bold shadow-lg shadow-primary/20">
-              Post <Send className="w-4 h-4" />
+              Publicar <Send className="w-4 h-4" />
             </Button>
           </div>
         </div>

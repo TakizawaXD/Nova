@@ -23,39 +23,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribeAuth = onAuthStateChanged(auth, async (firebaseUser) => {
+    const unsubscribeAuth = onAuthStateChanged(auth, (firebaseUser) => {
       setUser(firebaseUser);
-      
-      if (firebaseUser) {
-        // Suscribirse al perfil en tiempo real de forma segura
-        const profileRef = doc(db, 'users', firebaseUser.uid);
-        
-        const unsubscribeProfile = onSnapshot(
-          profileRef, 
-          (snapshot) => {
-            if (snapshot.exists()) {
-              setProfile({ ...snapshot.data(), uid: firebaseUser.uid });
-            } else {
-              // Si el documento no existe (recién registrado), evitamos dejarlo en null indefinidamente
-              setProfile({
-                uid: firebaseUser.uid,
-                displayName: firebaseUser.displayName || 'Ciudadano Nova',
-                username: 'usuario_' + firebaseUser.uid.substring(0, 5),
-                photoURL: firebaseUser.photoURL || `https://picsum.photos/seed/${firebaseUser.uid}/200/200`
-              });
-            }
-            setLoading(false);
-          },
-          (error) => {
-            console.error("Error al suscribirse al perfil (posibles reglas):", error);
-            // Fallback para no bloquear la UI si las reglas fallan
-            setProfile({ uid: firebaseUser.uid, displayName: 'Usuario Nova' });
-            setLoading(false);
-          }
-        );
-
-        return () => unsubscribeProfile();
-      } else {
+      if (!firebaseUser) {
         setProfile(null);
         setLoading(false);
       }
@@ -63,6 +33,35 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     return () => unsubscribeAuth();
   }, []);
+
+  useEffect(() => {
+    if (!user) return;
+
+    const profileRef = doc(db, 'users', user.uid);
+    const unsubscribeProfile = onSnapshot(
+      profileRef, 
+      (snapshot) => {
+        if (snapshot.exists()) {
+          setProfile({ ...snapshot.data(), uid: user.uid });
+        } else {
+          setProfile({
+            uid: user.uid,
+            displayName: user.displayName || 'Ciudadano Nova',
+            username: 'usuario_' + user.uid.substring(0, 5),
+            photoURL: user.photoURL || ''
+          });
+        }
+        setLoading(false);
+      },
+      (error) => {
+        console.error("Error al suscribirse al perfil:", error);
+        setProfile({ uid: user.uid, displayName: 'Usuario Nova' });
+        setLoading(false);
+      }
+    );
+
+    return () => unsubscribeProfile();
+  }, [user]);
 
   return (
     <AuthContext.Provider value={{ user, profile, loading }}>

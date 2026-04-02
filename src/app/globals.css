@@ -11,10 +11,10 @@
     --card-foreground: 250 15% 10%;
     --popover: 0 0% 100%;
     --popover-foreground: 250 15% 10%;
-    --primary: 250 80% 50%;
+    --primary: 260 100% 60%;
     --primary-foreground: 0 0% 100%;
     --secondary: 220 80% 95%;
-    --secondary-foreground: 250 80% 50%;
+    --secondary-foreground: 260 100% 60%;
     --muted: 250 10% 95%;
     --muted-foreground: 250 10% 40%;
     --accent: 190 100% 50%;
@@ -23,29 +23,29 @@
     --destructive-foreground: 0 0% 98%;
     --border: 250 15% 90%;
     --input: 250 15% 90%;
-    --ring: 250 80% 50%;
-    --radius: 1.25rem;
+    --ring: 260 100% 60%;
+    --radius: 2rem;
   }
 
   .dark {
-    --background: 250 25% 4%;
-    --foreground: 250 15% 95%;
-    --card: 250 20% 7%;
-    --card-foreground: 250 15% 95%;
-    --popover: 250 20% 6%;
-    --popover-foreground: 250 15% 95%;
+    --background: 240 10% 2.5%;
+    --foreground: 240 10% 95%;
+    --card: 240 10% 5%;
+    --card-foreground: 240 10% 95%;
+    --popover: 240 10% 4.5%;
+    --popover-foreground: 240 10% 95%;
     --primary: 260 100% 65%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 250 20% 12%;
+    --secondary: 240 10% 8%;
     --secondary-foreground: 260 100% 75%;
-    --muted: 250 20% 10%;
-    --muted-foreground: 250 10% 65%;
+    --muted: 240 10% 8%;
+    --muted-foreground: 240 10% 60%;
     --accent: 190 100% 50%;
-    --accent-foreground: 250 15% 10%;
-    --destructive: 0 62.8% 30.6%;
+    --accent-foreground: 240 10% 10%;
+    --destructive: 0 62.8% 40%;
     --destructive-foreground: 0 0% 98%;
-    --border: 250 20% 15%;
-    --input: 250 20% 15%;
+    --border: 240 10% 12%;
+    --input: 240 10% 12%;
     --ring: 260 100% 65%;
   }
 }
@@ -87,6 +87,50 @@
   scrollbar-width: none;
 }
 
+/* --- TEMAS (ATMÓSFERAS NOVA) --- */
+
+.theme-purple {
+  --primary: 260 100% 65%;
+  --accent: 190 100% 50%;
+  --ring: 260 100% 65%;
+}
+
+.theme-emerald {
+  --primary: 155 100% 50%;
+  --accent: 180 100% 50%;
+  --ring: 155 100% 50%;
+}
+
+.theme-amber {
+  --primary: 35 100% 55%;
+  --accent: 50 100% 50%;
+  --ring: 35 100% 55%;
+}
+
+.theme-rose {
+  --primary: 335 100% 65%;
+  --accent: 300 100% 60%;
+  --ring: 335 100% 65%;
+}
+
+.theme-cyan {
+  --primary: 185 100% 50%;
+  --accent: 210 100% 60%;
+  --ring: 185 100% 50%;
+}
+
+.theme-indigo {
+  --primary: 225 100% 65%;
+  --accent: 260 100% 70%;
+  --ring: 225 100% 65%;
+}
+
+.theme-slate {
+  --primary: 215 25% 75%;
+  --accent: 200 100% 50%;
+  --ring: 215 25% 75%;
+}
+
 @keyframes float {
   0% { transform: translateY(0px); }
   50% { transform: translateY(-10px); }
@@ -96,3 +140,4 @@
 .animate-float {
   animation: float 4s ease-in-out infinite;
 }
+

@@ -1,67 +1,44 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { discoverPopularPosts, AiEnhancedPostDiscoveryOutput } from '@/ai/flows/ai-enhanced-post-discovery';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Sparkles, RefreshCw, Eye } from 'lucide-react';
+import { Sparkles, Eye, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
-
 import { CreatePost } from '@/components/feed/CreatePost';
+import { subscribeToPosts, Post } from '@/lib/db';
 
 export default function ExplorePage() {
-  const [recommendations, setRecommendations] = useState<AiEnhancedPostDiscoveryOutput | null>(null);
+  const [recommendations, setRecommendations] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const fetchAIRecommendations = async () => {
-    setLoading(true);
-    try {
-      const mockPopularPosts = [
-        { id: '1', content: 'Increíble atardecer en la colonia marciana hoy. ¡Los tonos azules son impresionantes!', likes: 5000, comments: 400, shares: 1200 },
-        { id: '2', content: 'Nuevo avance en computación cuántica permite algoritmos sociales 1000 veces más rápidos. #ElFuturoEstáAquí', likes: 2300, comments: 150, shares: 800 },
-        { id: '3', content: 'Por qué todo el mundo habla de las nuevas pieles de Realidad Virtual en Nova. #VR #Diseño', likes: 12000, comments: 2000, shares: 5000 },
-      ];
-
-      const result = await discoverPopularPosts({ popularPosts: mockPopularPosts });
-      setRecommendations(result);
-    } catch (error) {
-      console.error("Error de clave API de Google AI. Cargando recomendaciones curadas locales:", error);
-      // Fallback seguro cuando no hay API Key
-      setRecommendations({
-        recommendedPosts: [
-          { postId: '1', summary: 'Fotografía Espacial', originalContent: 'Increíble atardecer en la colonia marciana hoy. ¡Los tonos azules son impresionantes!' },
-          { postId: '2', summary: 'Avance Cuántico', originalContent: 'Nuevo avance en computación cuántica permite algoritmos sociales 1000 veces más rápidos. #ElFuturoEstáAquí' },
-          { postId: '3', summary: 'Realidad Virtual Nova', originalContent: 'Por qué todo el mundo habla de las nuevas pieles de Realidad Virtual en Nova. #VR #Diseño' }
-        ]
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
-    fetchAIRecommendations();
+    const unsub = subscribeToPosts((posts) => {
+      setRecommendations(posts);
+      setLoading(false);
+    });
+    return () => unsub();
   }, []);
 
   return (
     <div className="space-y-8 animate-fade-in">
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div>
-          <h1 className="text-4xl font-black tracking-tighter flex items-center gap-3">
-            EXPLORA TU <span className="text-primary">MUNDO</span>
-            <Sparkles className="w-8 h-8 text-accent animate-pulse" />
+          <h1 className="text-3xl md:text-4xl font-black tracking-tighter flex items-center gap-2 md:gap-3 leading-none uppercase italic">
+            EXPLORA TU <span className="text-primary truncate">MUNDO</span>
+            <Sparkles className="w-6 h-6 md:w-8 md:h-8 text-accent animate-pulse shrink-0" />
           </h1>
-          <p className="text-muted-foreground mt-2">Contenido curado por IA según tus gustos.</p>
+          <p className="text-muted-foreground mt-2 text-sm md:text-base">Mapeo de red curado por el núcleo Nova.</p>
         </div>
         <Button 
-          onClick={fetchAIRecommendations} 
+          onClick={() => window.location.reload()} 
           disabled={loading}
           variant="outline" 
-          className="rounded-xl glass border-primary/20 text-primary hover:bg-primary/10 gap-2"
+          className="rounded-xl glass border-primary/20 text-primary hover:bg-primary/10 gap-2 h-12 md:h-auto text-xs md:text-sm font-black uppercase tracking-widest"
         >
-          <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-          Refrescar Descubrimientos
+          <Loader2 className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+          Refrescar Red
         </Button>
       </div>
 
@@ -80,38 +57,40 @@ export default function ExplorePage() {
             </Card>
           ))
         ) : (
-          recommendations?.recommendedPosts.map((post) => (
-            <Card key={post.postId} className="glass border-white/5 rounded-3xl overflow-hidden floating-card group cursor-pointer flex flex-col">
+          recommendations.map((post: Post) => (
+            <Card key={post.id} className="glass border-white/5 rounded-3xl overflow-hidden floating-card group cursor-pointer flex flex-col">
               <div className="relative h-48 w-full">
                 <div className="absolute inset-0 bg-gradient-to-t from-background to-transparent z-10" />
-                <img 
-                  src={`https://picsum.photos/seed/exp${post.postId}/600/400`} 
-                  className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" 
-                  alt="Visual del post"
-                />
+                {post.imageUrl && (
+                  <img 
+                    src={post.imageUrl} 
+                    className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" 
+                    alt="Visual del post"
+                  />
+                )}
                 <div className="absolute top-4 left-4 z-20">
-                  <span className="bg-primary/90 backdrop-blur-md text-white text-[10px] font-black px-2 py-1 rounded-full uppercase tracking-tighter">IA ELIGE</span>
+                  <span className="bg-primary/90 backdrop-blur-md text-white text-[10px] font-black px-2 py-1 rounded-full uppercase tracking-tighter">PULSO SOCIAL</span>
                 </div>
               </div>
               <CardHeader className="p-6 flex-1">
-                <CardTitle className="text-xl font-bold leading-tight group-hover:text-primary transition-colors">
-                  {post.summary}
+                <CardTitle className="text-xl font-bold leading-tight group-hover:text-primary transition-colors line-clamp-2 uppercase italic tracking-tighter">
+                  {post.content.substring(0, 40)}...
                 </CardTitle>
-                <CardDescription className="mt-4 line-clamp-3 text-sm italic border-l-2 border-accent pl-4 text-foreground/80">
-                  "{post.originalContent}"
+                <CardDescription className="mt-4 line-clamp-3 text-sm font-medium border-l-2 border-accent pl-4 text-foreground/80">
+                  "{post.content}"
                 </CardDescription>
               </CardHeader>
               <CardContent className="p-6 pt-0 mt-auto">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Avatar className="h-6 w-6 border border-white/10">
-                      <AvatarImage src={`https://picsum.photos/seed/u${post.postId}/50/50`} />
+                      <AvatarImage src={post.authorAvatar} />
                       <AvatarFallback>U</AvatarFallback>
                     </Avatar>
-                    <span className="text-xs font-medium text-muted-foreground">Autor Original</span>
+                    <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground truncate max-w-[100px]">@{post.authorHandle}</span>
                   </div>
-                  <Button variant="ghost" size="sm" className="rounded-full gap-2 hover:bg-primary/10 hover:text-primary">
-                    Ver Post <Eye className="w-4 h-4" />
+                  <Button variant="ghost" size="sm" className="rounded-full gap-2 hover:bg-primary/10 hover:text-primary font-black text-[10px] uppercase tracking-widest">
+                    Explorar <Eye className="w-4 h-4" />
                   </Button>
                 </div>
               </CardContent>

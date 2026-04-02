@@ -52,8 +52,8 @@ export function CreatePost() {
       const postPayload: any = {
         authorId: user.uid,
         authorName: profile.displayName,
-        authorHandle: profile.username,
-        authorAvatar: profile.photoURL,
+        authorHandle: profile.username || profile.displayName?.toLowerCase().replace(/\s/g, '_') || 'socio_nova',
+        authorAvatar: profile.photoURL || '',
         content: finalContent,
         likes: 0,
         comments: 0,
@@ -78,10 +78,11 @@ export function CreatePost() {
         description: 'Tu post ha sido compartido con el universo Nova.',
       });
     } catch (error) {
+      console.error("Error al publicar:", error);
       toast({
         variant: 'destructive',
-        title: 'Error',
-        description: 'No pudimos publicar tu post en este momento.',
+        title: 'Falla de Sincronización',
+        description: 'No pudimos publicar tu post en este momento. Reintenta en breve.',
       });
     } finally {
       setIsSubmitting(false);
@@ -95,50 +96,57 @@ export function CreatePost() {
   if (!user) return null;
 
   return (
-    <div className="glass border-white/5 rounded-3xl p-5 mb-8 shadow-xl relative overflow-hidden">
+    <div className="bg-[#050510]/40 backdrop-blur-3xl border border-white/5 rounded-[2.5rem] p-5 sm:p-6 shadow-2xl relative overflow-hidden transition-all hover:border-white/10 group/post">
       {/* Decorative gradient backglow */}
-      <div className="absolute -top-20 -right-20 w-64 h-64 bg-primary/5 rounded-full blur-3xl -z-10 pointer-events-none" />
+      <div className="absolute -top-24 -right-24 w-80 h-80 bg-primary/5 rounded-full blur-[100px] -z-10 pointer-events-none" />
       
-      <div className="flex gap-4">
-        <Avatar className="h-12 w-12 border-2 border-primary/20 shadow-lg">
-          <AvatarImage src={profile?.photoURL} alt={profile?.displayName} className="object-cover" />
-          <AvatarFallback>{profile?.displayName?.charAt(0) || 'U'}</AvatarFallback>
-        </Avatar>
-        <div className="flex-1 flex flex-col min-h-[120px]">
+      <div className="flex flex-col sm:flex-row gap-4 sm:gap-6">
+        <div className="flex items-center sm:items-start gap-4">
+            <Avatar className="h-12 w-12 sm:h-14 sm:w-14 border border-white/10 shadow-2xl shrink-0">
+                <AvatarImage src={profile?.photoURL} alt={profile?.displayName} className="object-cover" />
+                <AvatarFallback className="bg-primary/10 text-primary font-black text-xl">{profile?.displayName?.charAt(0) || 'U'}</AvatarFallback>
+            </Avatar>
+            <div className="sm:hidden">
+                <p className="text-sm font-black text-white italic tracking-tighter uppercase">{profile?.displayName}</p>
+                <p className="text-[10px] text-primary font-bold uppercase tracking-widest opacity-60">Emisión en vivo • XP</p>
+            </div>
+        </div>
+
+        <div className="flex-1 flex flex-col min-h-[120px] sm:min-h-[140px] pt-1 sm:pt-2">
           <Textarea 
             value={content}
             onChange={(e) => setContent(e.target.value)}
             placeholder={`¿Qué está pasando en tu mundo, ${profile?.displayName?.split(' ')[0]}?`} 
-            className="bg-transparent border-none focus-visible:ring-0 text-lg resize-none min-h-[60px] p-0 placeholder:text-muted-foreground/50 text-white"
+            className="bg-transparent border-none focus-visible:ring-0 text-lg sm:text-xl font-medium resize-none min-h-[80px] p-0 placeholder:text-muted-foreground/30 text-white scroll-hide leading-relaxed px-1"
           />
 
-          {/* Dinamic Attachment Area */}
+          {/* Dynamic Attachment Area */}
           {activeAttachment !== 'none' && (
-            <div className="mb-4 mt-2 p-4 bg-black/40 border border-white/10 rounded-2xl animate-fade-in relative">
+            <div className="mb-6 mt-4 p-5 bg-white/5 border border-white/10 rounded-[1.5rem] animate-fade-in relative">
               <Button 
                 variant="ghost" 
                 size="icon" 
-                className="absolute right-2 top-2 h-6 w-6 rounded-full text-muted-foreground hover:bg-white/10"
+                className="absolute right-3 top-3 h-8 w-8 rounded-full text-muted-foreground hover:bg-white/10 hover:text-white transition-all"
                 onClick={() => setActiveAttachment('none')}
               >
-                <X className="w-3 h-3" />
+                <X className="w-4 h-4" />
               </Button>
 
               {activeAttachment === 'media' && (
-                <div className="space-y-3">
-                  <p className="text-xs font-black uppercase tracking-widest text-primary flex items-center gap-2">
+                <div className="space-y-4">
+                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-primary flex items-center gap-2">
                     <ImageIcon className="w-4 h-4" /> Adjuntar Multimedia
                   </p>
                   <Input 
-                    placeholder="Pega la URL pública de la imagen o video (Ej: https://...)" 
+                    placeholder="Pega la URL pública de la imagen o video..." 
                     value={mediaUrl}
                     onChange={e => setMediaUrl(e.target.value)}
-                    className="bg-white/5 border-white/10 rounded-xl text-sm h-12"
+                    className="bg-white/5 border-white/5 rounded-2xl text-sm h-14 px-5 focus:bg-white/10 transition-all"
                   />
                   {mediaUrl && (
-                    <div className="h-24 w-full bg-white/5 rounded-xl border border-white/10 mt-2 overflow-hidden relative">
+                    <div className="aspect-video w-full bg-white/5 rounded-2xl border border-white/5 mt-4 overflow-hidden relative">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={mediaUrl} alt="Preview" className="w-full h-full object-cover opacity-80" onError={(e) => (e.currentTarget.style.display = 'none')} />
+                      <img src={mediaUrl} alt="Preview" className="w-full h-full object-cover" onError={(e) => (e.currentTarget.style.display = 'none')} />
                     </div>
                   )}
                 </div>
@@ -146,88 +154,94 @@ export function CreatePost() {
 
               {activeAttachment === 'poll' && (
                 <div className="space-y-3">
-                  <p className="text-xs font-black uppercase tracking-widest text-accent flex items-center gap-2">
+                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-accent flex items-center gap-2">
                     <BarChart3 className="w-4 h-4" /> Crear Encuesta
                   </p>
-                  {pollOptions.map((opt, i) => (
-                    <Input 
-                      key={i}
-                      placeholder={`Opción ${i + 1}`} 
-                      value={opt}
-                      onChange={e => handleUpdatePollOption(i, e.target.value)}
-                      className="bg-white/5 border-white/10 rounded-xl text-sm h-10"
-                    />
-                  ))}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {pollOptions.map((opt, i) => (
+                      <Input 
+                        key={i}
+                        placeholder={`Opción ${i + 1}`} 
+                        value={opt}
+                        onChange={e => handleUpdatePollOption(i, e.target.value)}
+                        className="bg-white/5 border-white/5 rounded-xl text-sm h-12 px-4"
+                      />
+                    ))}
+                  </div>
                   {pollOptions.length < 4 && (
-                    <Button variant="ghost" size="sm" onClick={handleAddPollOption} className="text-xs text-muted-foreground hover:text-accent w-full border border-dashed border-white/10 rounded-xl">
-                      <PlusCircle className="w-3 h-3 mr-2" /> Añadir Opción
+                    <Button variant="ghost" size="sm" onClick={handleAddPollOption} className="text-[10px] font-black uppercase tracking-widest text-muted-foreground hover:text-accent w-full border border-dashed border-white/10 rounded-xl h-10 mt-2">
+                      <PlusCircle className="w-4 h-4 mr-2" /> Añadir Opción
                     </Button>
                   )}
                 </div>
               )}
 
               {activeAttachment === 'location' && (
-                <div className="space-y-3">
-                  <p className="text-xs font-black uppercase tracking-widest text-green-500 flex items-center gap-2">
-                    <MapPin className="w-4 h-4" /> Ubicación Interestelar
+                <div className="space-y-4">
+                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-green-500 flex items-center gap-2">
+                    <MapPin className="w-4 h-4" /> Ubicación Nova
                   </p>
                   <Input 
-                    placeholder="¿Dónde te originaste?" 
+                    placeholder="¿Desde dónde transmites?" 
                     value={locationStr}
                     onChange={e => setLocationStr(e.target.value)}
-                    className="bg-white/5 border-white/10 rounded-xl text-sm h-10"
+                    className="bg-white/5 border-white/5 rounded-xl text-sm h-12 px-4"
                   />
                 </div>
               )}
             </div>
           )}
 
-          <div className="flex items-center justify-between pt-3 mt-auto border-t border-white/5">
-            <div className="flex items-center gap-1 sm:gap-2">
+          <div className="flex items-center justify-between pt-4 mt-auto border-t border-white/5">
+            <div className="flex items-center gap-2">
               <Button 
                 onClick={() => toggleAttachment('media')} 
                 variant="ghost" size="icon" 
-                className={cn("rounded-full transition-all", activeAttachment === 'media' ? "bg-primary/20 text-primary" : "text-primary hover:bg-primary/10")}
+                className={cn("rounded-2xl transition-all w-11 h-11", activeAttachment === 'media' ? "bg-primary/20 text-primary" : "text-[#8B5CF6] hover:bg-primary/10")}
               >
-                <ImageIcon className="w-5 h-5" />
+                <ImageIcon className="w-6 h-6" />
               </Button>
               <Button 
                 onClick={() => toggleAttachment('media')} 
                 variant="ghost" size="icon" 
-                className={cn("rounded-full transition-all", activeAttachment === 'media' ? "bg-accent/20 text-accent" : "text-accent hover:bg-accent/10")}
+                className={cn("rounded-2xl transition-all w-11 h-11", activeAttachment === 'media' ? "bg-accent/20 text-accent" : "text-[#06B6D4] hover:bg-accent/10")}
               >
-                <Film className="w-5 h-5" />
+                <Film className="w-6 h-6" />
               </Button>
               <Button 
                 onClick={() => toggleAttachment('poll')} 
                 variant="ghost" size="icon" 
-                className={cn("rounded-full transition-all", activeAttachment === 'poll' ? "bg-orange-500/20 text-orange-500" : "text-orange-500 hover:bg-orange-500/10")}
+                className={cn("rounded-2xl transition-all w-11 h-11", activeAttachment === 'poll' ? "bg-orange-500/20 text-orange-500" : "text-[#F59E0B] hover:bg-orange-500/10")}
               >
-                <BarChart3 className="w-5 h-5" />
+                <BarChart3 className="w-6 h-6" />
               </Button>
               <Button 
-                onClick={() => setContent(prev => prev + '😁')} 
+                onClick={() => setContent(prev => prev + '🚀')} 
                 variant="ghost" size="icon" 
-                className="rounded-full text-yellow-500 hover:bg-yellow-500/10"
+                className="rounded-2xl text-[#EAB308] hover:bg-yellow-500/10 w-11 h-11"
               >
-                <Smile className="w-5 h-5" />
+                <Smile className="w-6 h-6" />
               </Button>
               <Button 
                 onClick={() => toggleAttachment('location')} 
                 variant="ghost" size="icon" 
-                className={cn("rounded-full transition-all", activeAttachment === 'location' ? "bg-green-500/20 text-green-500" : "text-green-500 hover:bg-green-500/10")}
+                className={cn("rounded-2xl transition-all w-11 h-11", activeAttachment === 'location' ? "bg-green-500/20 text-green-500" : "text-[#10B981] hover:bg-green-500/10")}
               >
-                <MapPin className="w-5 h-5" />
+                <MapPin className="w-6 h-6" />
               </Button>
             </div>
             
             <Button 
               onClick={handleSubmit}
               disabled={isSubmitting || (!content.trim() && activeAttachment === 'none')}
-              className="rounded-[1.25rem] bg-primary hover:bg-primary/90 px-6 gap-2 font-bold shadow-[0_0_20px_theme(colors.primary.DEFAULT/30)] transition-all hover:scale-105"
+              className="rounded-2xl bg-gradient-to-r from-primary to-indigo-600 hover:brightness-110 px-8 gap-3 font-black uppercase tracking-widest text-[11px] h-12 shadow-xl shadow-primary/20 transition-all hover:scale-105 active:scale-95"
             >
-              {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Publicar'}
-              <Send className="w-4 h-4" />
+              {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : (
+                <>
+                  Publicar
+                  <Send className="w-4 h-4 rotate-45" />
+                </>
+              )}
             </Button>
           </div>
         </div>

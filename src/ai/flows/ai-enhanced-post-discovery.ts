@@ -71,7 +71,23 @@ const aiEnhancedPostDiscoveryFlow = ai.defineFlow(
     outputSchema: AiEnhancedPostDiscoveryOutputSchema,
   },
   async (input) => {
-    const { output } = await aiEnhancedPostDiscoveryPrompt(input);
-    return output!;
+    try {
+      const { output } = await aiEnhancedPostDiscoveryPrompt(input);
+      if (!output) throw new Error('No output from AI');
+      return output;
+    } catch (error) {
+      console.error('Error in AI discovery flow, falling back to local processing:', error);
+      // Fallback: Manually create summaries if AI is unavailable or fails
+      return {
+        recommendedPosts: input.popularPosts.map(post => ({
+          postId: post.id,
+          summary: post.content.length > 100 
+            ? post.content.substring(0, 100) + '...' 
+            : post.content,
+          originalContent: post.content,
+          mediaUrl: post.mediaUrl
+        }))
+      };
+    }
   }
 );

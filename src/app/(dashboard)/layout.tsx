@@ -1,7 +1,9 @@
 
 import { Navbar } from '@/components/layout/Navbar';
 import { AppSidebar } from '@/components/layout/AppSidebar';
+import { MobileNav } from '@/components/layout/MobileNav';
 import { NovaAI } from '@/components/ai/NovaAI';
+import { InstallButton } from '@/components/pwa/InstallButton';
 
 export default function DashboardLayout({
   children,
@@ -17,13 +19,15 @@ export default function DashboardLayout({
       <Navbar />
       <div className="flex flex-1 pt-0">
         <AppSidebar />
-        <main className="flex-1 md:ml-20 xl:ml-64 p-4 md:p-8 max-w-full">
+        <main className="flex-1 md:ml-20 xl:ml-72 p-4 md:p-8 max-w-full pb-32 md:pb-8 transition-all duration-500">
           <div className="mx-auto max-w-7xl relative">
             {children}
           </div>
         </main>
       </div>
+      <MobileNav />
       <NovaAI />
+      <InstallButton />
     </div>
   );
 }

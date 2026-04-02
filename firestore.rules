@@ -9,19 +9,19 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == userId;
     }
 
-    // Usuarios: Lectura pública (necesaria para perfiles y posts), creación/edición restringida
+    // Usuarios: Lectura pública, edición restringida al dueño
     match /users/{userId} {
       allow read: if true;
       allow create: if isSignedIn();
       allow update: if isOwner(userId);
-      allow delete: if false; // Por seguridad, desactivamos borrado directo
+      allow delete: if false;
     }
     
-    // Publicaciones: Lectura global para el feed
+    // Publicaciones: Lectura global
     match /posts/{postId} {
       allow read: if true;
       allow create: if isSignedIn();
-      allow update: if isSignedIn(); // Permite likes y contadores
+      allow update: if isSignedIn(); // Permite likes
       allow delete: if isSignedIn() && resource.data.authorId == request.auth.uid;
     }
     
@@ -33,7 +33,7 @@ service cloud.firestore {
       allow delete: if isSignedIn() && (resource.data.authorId == request.auth.uid || get(/databases/$(database)/documents/posts/$(resource.data.postId)).data.authorId == request.auth.uid);
     }
 
-    // Chats: Solo participantes pueden ver su existencia
+    // Chats Privados: Solo participantes 1-a-1
     match /chats/{chatId} {
       allow read: if isSignedIn() && request.auth.uid in resource.data.participants;
       allow create: if isSignedIn();
@@ -41,43 +41,41 @@ service cloud.firestore {
       allow delete: if false;
     }
 
-    // Mensajes: Lectura permitida si el usuario está en el chat
+    // Mensajes Privados: SEGURIDAD CRÍTICA - Solo participantes del chat pueden leer sus mensajes
     match /messages/{messageId} {
-      allow read: if isSignedIn(); 
+      allow read: if isSignedIn() && (
+        // Si el mensaje es de un chat directo
+        (resource.data.chatId != null && request.auth.uid in get(/databases/$(database)/documents/chats/$(resource.data.chatId)).data.participants) ||
+        // Si el mensaje es de un canal de grupo
+        (resource.data.groupId != null && request.auth.uid in get(/databases/$(database)/documents/group_members/$(request.auth.uid)).data.userId)
+      );
       allow create: if isSignedIn();
       allow update: if false;
       allow delete: if isSignedIn() && resource.data.senderId == request.auth.uid;
     }
 
-    // Historias y Reels: Lectura pública
+    // Historias (Destellos): Agrupadas por autor
     match /stories/{storyId} {
       allow read: if true;
       allow create: if isSignedIn();
-      allow update: if false;
+      allow update: if isSignedIn(); // Permite votos/likes
       allow delete: if isSignedIn() && resource.data.authorId == request.auth.uid;
     }
 
-    match /reels/{reelId} {
-      allow read: if true;
-      allow create: if isSignedIn();
-      allow update: if isSignedIn();
-      allow delete: if isSignedIn() && resource.data.authorId == request.auth.uid;
-    }
-
-    // Marketplace: Lectura pública
+    // Marketplace: Comercio Nova crédito
     match /marketplace/{itemId} {
       allow read: if true;
       allow create: if isSignedIn();
-      allow update: if isSignedIn() && resource.data.sellerId == request.auth.uid;
-      allow delete: if isSignedIn() && resource.data.sellerId == request.auth.uid;
+      allow update: if isSignedIn() && (resource.data.ownerId == request.auth.uid || resource.data.sellerId == request.auth.uid);
+      allow delete: if isSignedIn() && (resource.data.ownerId == request.auth.uid || resource.data.sellerId == request.auth.uid);
     }
 
-    // Otros (Seguidores, bloqueos, etc)
-    match /{path=**}/followers/{id} { allow read, write: if isSignedIn(); }
-    match /{path=**}/following/{id} { allow read, write: if isSignedIn(); }
-    match /{path=**}/friends/{id} { allow read, write: if isSignedIn(); }
-    match /{path=**}/blockedUsers/{id} { allow read, write: if isSignedIn(); }
-    match /{path=**}/reports/{id} { allow read: if isSignedIn(); allow create: if isSignedIn(); }
-    match /{path=**}/notifications/{id} { allow read, write: if isSignedIn(); }
+    // Colecciones anidadas y utilidades
+    match /notifications/{id} {
+      allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow update: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn();
+      allow delete: if isSignedIn() && resource.data.userId == request.auth.uid;
+    }
   }
 }

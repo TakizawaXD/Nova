@@ -1,7 +1,7 @@
 
 'use client';
 
-import { Home, Compass, MessageCircle, PlayCircle, Users, ShoppingBag, Settings, ShieldCheck, UserCircle, History, Heart, PlusCircle } from 'lucide-react';
+import { Home, Compass, MessageCircle, PlayCircle, Users, ShoppingBag, Settings, ShieldCheck, UserCircle, History, Heart, PlusCircle, Zap } from 'lucide-react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { usePathname } from 'next/navigation';
@@ -10,9 +10,9 @@ const menuItems = [
   { label: 'Inicio', icon: Home, href: '/' },
   { label: 'Explorar', icon: Compass, href: '/explore' },
   { label: 'Mensajes', icon: MessageCircle, href: '/messages' },
-  { label: 'Historias', icon: History, href: '/stories' },
+  { label: 'Destellos', icon: History, href: '/stories' },
   { label: 'Reels', icon: PlayCircle, href: '/reels' },
-  { label: 'Grupos', icon: Users, href: '/groups' },
+  { label: 'Comunidades', icon: Users, href: '/communities' },
   { label: 'Tienda', icon: ShoppingBag, href: '/marketplace' },
   { label: 'Amigos', icon: Heart, href: '/friends' },
 ];
@@ -27,56 +27,53 @@ export function AppSidebar() {
   const pathname = usePathname();
 
   return (
-    <aside className="fixed left-0 top-16 bottom-0 w-20 xl:w-64 glass border-r border-white/5 p-4 flex flex-col justify-between hidden md:flex z-40 transition-all duration-500 ease-in-out">
-      <div className="space-y-8">
-        <div className="space-y-2">
+    <aside className="fixed left-0 top-16 bottom-0 w-20 xl:w-72 bg-[#050510]/80 backdrop-blur-3xl border-r border-white/5 p-4 flex flex-col justify-between hidden md:flex z-40 transition-all duration-500 ease-in-out">
+      <div className="space-y-8 mt-4">
+        <div className="space-y-3">
           {menuItems.map((item) => (
             <Link 
               key={item.href} 
               href={item.href}
               className={cn(
-                "flex items-center gap-4 p-3 rounded-2xl transition-all duration-300 group relative",
+                "flex items-center gap-4 p-4 rounded-[1.5rem] transition-all duration-300 group relative",
                 pathname === item.href 
-                  ? "bg-primary text-white shadow-lg shadow-primary/40 electric-glow" 
-                  : "hover:bg-primary/10 hover:text-primary"
+                  ? "bg-primary text-white shadow-lg shadow-primary/20" 
+                  : "hover:bg-white/5 text-muted-foreground hover:text-white"
               )}
             >
-              <item.icon className={cn("w-6 h-6 shrink-0", pathname === item.href ? "animate-pulse" : "text-muted-foreground group-hover:text-primary")} />
-              <span className="hidden xl:block font-bold tracking-tight">{item.label}</span>
-              {pathname === item.href && (
-                <div className="absolute left-0 w-1 h-8 bg-accent rounded-full -translate-x-4 hidden xl:block" />
-              )}
+              <item.icon className={cn("w-6 h-6 shrink-0", pathname === item.href ? "" : "text-muted-foreground group-hover:text-white")} />
+              <span className="hidden xl:block font-bold tracking-tight text-[15px]">{item.label}</span>
             </Link>
           ))}
         </div>
 
-        <div className="h-px bg-white/10 xl:mx-4" />
-
-        <div className="space-y-2">
-          <p className="hidden xl:block px-4 text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] mb-4">Sistema</p>
-          {secondaryItems.map((item) => (
-            <Link 
-              key={item.href} 
-              href={item.href}
-              className={cn(
-                "flex items-center gap-4 p-3 rounded-2xl transition-all duration-300 group",
-                pathname === item.href 
-                  ? "bg-secondary text-primary shadow-md" 
-                  : "hover:bg-primary/10 hover:text-primary"
-              )}
-            >
-              <item.icon className={cn("w-6 h-6 shrink-0", pathname === item.href ? "" : "text-muted-foreground group-hover:text-primary")} />
-              <span className="hidden xl:block font-bold tracking-tight">{item.label}</span>
-            </Link>
-          ))}
+        <div className="space-y-4 pt-4 border-t border-white/5">
+          <p className="hidden xl:block px-4 text-[11px] font-black text-muted-foreground uppercase tracking-[0.2em]">Sistema</p>
+          <div className="space-y-3">
+            {secondaryItems.map((item) => (
+              <Link 
+                key={item.href} 
+                href={item.href}
+                className={cn(
+                  "flex items-center gap-4 p-4 rounded-[1.5rem] transition-all duration-300 group",
+                  pathname === item.href 
+                    ? "bg-primary text-white shadow-lg" 
+                    : "hover:bg-white/5 text-muted-foreground hover:text-white"
+                )}
+              >
+                <item.icon className={cn("w-6 h-6 shrink-0", pathname === item.href ? "" : "text-muted-foreground group-hover:text-white")} />
+                <span className="hidden xl:block font-bold tracking-tight text-[15px]">{item.label}</span>
+              </Link>
+            ))}
+          </div>
         </div>
       </div>
 
-      <div className="hidden xl:block p-5 rounded-[2rem] bg-gradient-to-br from-primary/20 via-primary/5 to-accent/20 border border-white/10 backdrop-blur-xl group overflow-hidden relative">
-        <div className="absolute -right-4 -top-4 w-16 h-16 bg-primary/20 rounded-full blur-2xl group-hover:bg-primary/40 transition-all" />
+      <div className="hidden xl:block p-6 rounded-[2.5rem] bg-gradient-to-br from-primary/10 to-indigo-500/10 border border-white/5 backdrop-blur-3xl group overflow-hidden relative m-2">
+        <div className="absolute -right-4 -top-4 w-16 h-16 bg-primary/20 rounded-full blur-2xl transition-all" />
         <p className="text-sm font-black text-primary uppercase mb-1 tracking-tighter">Nova Pro</p>
-        <p className="text-[11px] text-muted-foreground leading-snug mb-4">Desbloquea el futuro con funciones exclusivas de IA.</p>
-        <button className="w-full py-2.5 bg-primary text-white text-xs font-black rounded-xl hover:bg-primary/80 transition-all shadow-lg shadow-primary/20 uppercase tracking-widest">Upgrade</button>
+        <p className="text-[11px] text-muted-foreground leading-snug mb-5">Desbloquea el futuro con funciones exclusivas de IA.</p>
+        <button className="w-full py-3 bg-primary text-white text-[11px] font-black rounded-2xl hover:brightness-110 transition-all shadow-xl shadow-primary/30 uppercase tracking-widest">Upgrade</button>
       </div>
     </aside>
   );

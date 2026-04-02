@@ -92,27 +92,53 @@ function ReelItem({ reel }: { reel: Reel }) {
     return () => observer.disconnect();
   }, []);
 
+  const isYouTube = reel.videoUrl?.includes('youtube.com') || reel.videoUrl?.includes('youtu.be');
+  const getYTId = (url: string) => {
+    // Detect regular video or shorts
+    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=|shorts\/)([^#\&\?]*).*/;
+    const match = url.match(regExp);
+    return (match && match[2].length === 11) ? match[2] : null;
+  };
+
+  const ytId = isYouTube ? getYTId(reel.videoUrl) : null;
+
   return (
     <div className="relative w-full max-w-[400px] h-[calc(100vh-160px)] min-h-[600px] rounded-[2.5rem] overflow-hidden snap-center flex-shrink-0 mb-8 border border-white/10 shadow-2xl group bg-black">
       
-      <video 
-        ref={videoRef}
-        src={reel.videoUrl} 
-        className="absolute inset-0 w-full h-full object-cover" 
-        loop 
-        playsInline
-        onClick={togglePlay}
-      />
+      {isYouTube && ytId ? (
+          <div className="absolute inset-0 w-full h-full pointer-events-auto">
+            <iframe
+              className="w-full h-full scale-[1.02] origin-center"
+              src={`https://www.youtube.com/embed/${ytId}?autoplay=1&mute=1&loop=1&playlist=${ytId}&controls=0&modestbranding=1&showinfo=0&rel=0&iv_load_policy=3&disablekb=1`}
+              title="YouTube Reels Player"
+              frameBorder="0"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            ></iframe>
+            {/* Transparent click layer for mobile */}
+            <div className="absolute inset-0 z-10 bg-transparent" />
+          </div>
+      ) : (
+          <video 
+            ref={videoRef}
+            src={reel.videoUrl} 
+            className="absolute inset-0 w-full h-full object-cover" 
+            loop 
+            playsInline
+            onClick={togglePlay}
+          />
+      )}
       
       {/* Overlay play button when paused */}
-      <div 
-        onClick={togglePlay}
-        className={cn("absolute inset-0 z-10 flex items-center justify-center transition-all bg-black/20", isPlaying ? "opacity-0" : "opacity-100")}
-      >
-        <div className="w-20 h-20 bg-black/40 backdrop-blur-xl rounded-full flex items-center justify-center border border-white/20">
-          <Play className="w-10 h-10 text-white fill-current ml-1" />
-        </div>
-      </div>
+      {!isYouTube && (
+          <div 
+            onClick={togglePlay}
+            className={cn("absolute inset-0 z-10 flex items-center justify-center transition-all bg-black/20", isPlaying ? "opacity-0" : "opacity-100")}
+          >
+            <div className="w-20 h-20 bg-black/40 backdrop-blur-xl rounded-full flex items-center justify-center border border-white/20">
+              <Play className="w-10 h-10 text-white fill-current ml-1" />
+            </div>
+          </div>
+      )}
 
       <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-black/10 pointer-events-none" />
 

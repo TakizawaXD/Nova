@@ -1,0 +1,36 @@
+{
+  "name": "NovaSphere",
+  "short_name": "Nova",
+  "description": "El ecosistema social del futuro. NovaSphere conecta exploradores en una red descentralizada con IA, mercado y comunicaciones efímeras.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#030303",
+  "theme_color": "#8B5CF6",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Marketplace",
+      "url": "/marketplace",
+      "icons": [{ "src": "/icons/market.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Destellos",
+      "url": "/stories",
+      "icons": [{ "src": "/icons/stories.png", "sizes": "192x192" }]
+    }
+  ]
+}

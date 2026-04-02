@@ -63,7 +63,7 @@ export function NovaAI() {
   };
 
   return (
-    <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-4">
+    <div className="fixed top-32 right-6 z-50 flex flex-col items-end gap-4 shadow-2xl">
       {isOpen && !isMinimized && (
         <Card className="w-80 md:w-96 glass border-primary/30 shadow-2xl overflow-hidden animate-fade-in flex flex-col h-[500px]">
           <CardHeader className="p-4 bg-primary/20 backdrop-blur-3xl border-b border-white/10 flex flex-row items-center justify-between">

@@ -1,13 +1,13 @@
 
 'use client';
 
-import { useState } from 'react';
-import { MoreHorizontal, Edit2, Trash2, Loader2, AlertTriangle, Heart, MessageSquare, Repeat, Share2, Bookmark, Send } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { MoreHorizontal, Edit2, Trash2, Loader2, AlertTriangle, Heart, MessageSquare, Repeat, Share2, Bookmark, Send, Sparkles, Verified, Smile, Ghost } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardFooter } from '@/components/ui/card';
 import { useAuth } from '@/context/AuthContext';
-import { updatePost, deletePost, toggleLikePost, addComment, subscribeToComments, Comment } from '@/lib/db';
+import { updatePost, deletePost, toggleLikePost, addComment, subscribeToComments, deleteComment, Comment } from '@/lib/db';
 import { useToast } from '@/hooks/use-toast';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
@@ -17,15 +17,16 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
 import Image from 'next/image';
+import Link from 'next/link';
 import { cn } from '@/lib/utils';
 
 interface PostCardProps {
-  id?: string;
+  id: string;
   author: {
+    id: string;
     name: string;
     handle: string;
     avatar: string;
-    id?: string;
   };
   content: string;
   image?: string;
@@ -34,9 +35,10 @@ interface PostCardProps {
   comments?: number;
   shares?: number;
   likedBy?: string[];
+  priority?: boolean;
 }
 
-export function PostCard({ id, author, content, image, timestamp, likes = 0, comments: initialCommentsCount = 0, shares = 0, likedBy = [] }: PostCardProps) {
+export function PostCard({ id, author, content, image, timestamp, likes = 0, comments: initialCommentsCount = 0, shares = 0, likedBy = [], priority = false }: PostCardProps) {
   const { user, profile } = useAuth();
   const { toast } = useToast();
   
@@ -51,7 +53,40 @@ export function PostCard({ id, author, content, image, timestamp, likes = 0, com
   const [newComment, setNewComment] = useState('');
   const [isLiked, setIsLiked] = useState(user ? likedBy.includes(user.uid) : false);
 
-  const isOwner = user && user.displayName === author.name;
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [showStickerPicker, setShowStickerPicker] = useState(false);
+
+  const COMMON_EMOJIS = ['🔥', '✨', '🚀', '⭐', '💎', '❤️', '🙌', '💯', '🦾', '👾', '🪐', '⚡'];
+  const NOVA_STICKERS = [
+    'https://cdn.pixabay.com/photo/2020/08/21/08/40/astronaut-5505541_1280.png',
+    'https://cdn.pixabay.com/photo/2020/08/21/08/46/astronaut-5505568_1280.png',
+    'https://cdn.pixabay.com/photo/2017/01/31/15/34/astronaut-2025114_1280.png',
+    'https://cdn.pixabay.com/photo/2017/01/31/15/33/astronaut-2025111_1280.png'
+  ];
+
+  const handleEmojiSelect = (emoji: string) => {
+    setNewComment(prev => prev + emoji);
+    setShowEmojiPicker(false);
+  };
+
+  const handleStickerSelect = async (stickerUrl: string) => {
+    if (!id || !user || !profile) return;
+    try {
+      await addComment({
+        postId: id,
+        authorId: user.uid,
+        authorName: profile.displayName,
+        authorAvatar: profile.photoURL,
+        text: '',
+        stickerUrl: stickerUrl
+      });
+      setShowStickerPicker(false);
+    } catch (error) {
+      console.error("Error adding sticker", error);
+    }
+  };
+
+  const isOwner = user && user.uid === author.id;
 
   // --- Funciones CRUD de Autor ---
   const handleUpdate = async () => {
@@ -93,10 +128,16 @@ export function PostCard({ id, author, content, image, timestamp, likes = 0, com
     }
   };
 
-  const handleToggleComments = () => {
-    if (!showComments && id) {
-      subscribeToComments(id, (data) => setPostComments(data));
+  useEffect(() => {
+    if (showComments && id) {
+      const unsub = subscribeToComments(id, (data) => {
+        setPostComments(data);
+      });
+      return () => unsub();
     }
+  }, [showComments, id]);
+
+  const handleToggleComments = () => {
     setShowComments(!showComments);
   };
 
@@ -118,34 +159,39 @@ export function PostCard({ id, author, content, image, timestamp, likes = 0, com
 
   return (
     <>
-      <Card className="glass border-white/5 rounded-[2rem] overflow-hidden floating-card mb-6">
-        <CardHeader className="flex flex-row items-center justify-between p-5 space-y-0">
-          <div className="flex items-center gap-3">
-            <Avatar className="h-10 w-10 border-2 border-primary/20">
-              <AvatarImage src={author.avatar} alt={author.name} />
-              <AvatarFallback>{author.name.charAt(0)}</AvatarFallback>
-            </Avatar>
-            <div>
-              <div className="flex items-center gap-1">
-                <span className="font-bold text-sm hover:text-primary transition-colors cursor-pointer">{author.name}</span>
-                <span className="text-[10px] bg-primary/20 text-primary px-1.5 py-0.5 rounded-full font-black uppercase tracking-tighter">Verified</span>
+      <Card className="bg-[#050510]/40 backdrop-blur-3xl border border-white/5 rounded-[2.5rem] overflow-hidden transition-all hover:border-white/10 mb-8 shadow-2xl relative group/card">
+        <CardHeader className="flex flex-row items-center justify-between px-6 py-6 pb-2">
+          <Link href={`/profile/${author.id}`} className="flex items-center gap-4 group/author cursor-pointer">
+            <div className="relative group-hover/author:scale-105 transition-transform duration-500">
+              <Avatar className="h-14 w-14 border-2 border-white/5 group-hover/author:border-primary/50 transition-colors shadow-2xl">
+                <AvatarImage src={author.avatar} className="object-cover" />
+                <AvatarFallback className="bg-primary/10 text-primary font-black text-lg">{author.name?.charAt(0)}</AvatarFallback>
+              </Avatar>
+              <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-[#030303] rounded-full flex items-center justify-center border border-white/5">
+                 <div className="w-2 h-2 bg-green-500 rounded-full" />
               </div>
-              <p className="text-xs text-muted-foreground">@{author.handle} • {timestamp}</p>
             </div>
-          </div>
+            <div className="flex flex-col">
+              <div className="flex items-center gap-2">
+                <span className="font-black text-white italic tracking-tight text-lg group-hover/author:text-primary transition-colors leading-none">{author.name}</span>
+                <Verified className="w-4 h-4 text-primary opacity-80" />
+              </div>
+              <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mt-1 opacity-60">@{author.handle} <span className="mx-1.5 opacity-30">•</span> {timestamp}</p>
+            </div>
+          </Link>
           
           {isOwner && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="rounded-full text-muted-foreground hover:bg-white/5 data-[state=open]:bg-white/10">
-                  <MoreHorizontal className="w-5 h-5" />
+                <Button variant="ghost" size="icon" className="rounded-2xl text-muted-foreground hover:bg-white/5 data-[state=open]:bg-white/10 w-10 h-10">
+                  <MoreHorizontal className="w-6 h-6" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48 glass border-white/10 rounded-xl p-2 shadow-2xl">
-                <DropdownMenuItem onClick={() => setIsEditing(true)} className="rounded-lg gap-2 cursor-pointer font-bold focus:bg-white/10">
-                  <Edit2 className="w-4 h-4 text-primary" /> Editar Publicación
+              <DropdownMenuContent align="end" className="w-56 bg-[#050510]/95 backdrop-blur-2xl border border-white/10 rounded-[1.5rem] p-2 shadow-2xl">
+                <DropdownMenuItem onClick={() => setIsEditing(true)} className="rounded-xl gap-3 cursor-pointer font-black uppercase tracking-widest text-[10px] py-3 focus:bg-primary/20 focus:text-primary">
+                  <Edit2 className="w-4 h-4" /> Editar Post
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setIsDeleting(true)} className="rounded-lg gap-2 cursor-pointer text-red-500 focus:bg-red-500/20 focus:text-red-500 font-bold mt-1">
+                <DropdownMenuItem onClick={() => setIsDeleting(true)} className="rounded-xl gap-3 cursor-pointer text-red-500 focus:bg-red-500/10 focus:text-red-500 font-black uppercase tracking-widest text-[10px] py-3 mt-1">
                   <Trash2 className="w-4 h-4" /> Eliminar
                 </DropdownMenuItem>
               </DropdownMenuContent>
@@ -153,92 +199,173 @@ export function PostCard({ id, author, content, image, timestamp, likes = 0, com
           )}
         </CardHeader>
 
-        <CardContent className="px-5 py-2 pb-4 space-y-4">
-          <p className="text-sm leading-relaxed whitespace-pre-wrap">{content}</p>
+        <CardContent className="px-6 py-2 pb-6 space-y-5">
+          <p className="text-base leading-relaxed whitespace-pre-wrap text-white/90 font-medium">{content}</p>
           {image && (
-            <div className="relative aspect-[4/3] w-full rounded-2xl overflow-hidden border border-white/5 mt-4">
-              <Image src={image} alt="Post image" fill className="object-cover" />
+            <div className="relative aspect-[16/10] w-full rounded-[2rem] overflow-hidden border border-white/10 mt-4 group/image shadow-2xl">
+              <Image 
+                src={image} 
+                alt="Post image" 
+                fill 
+                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 800px"
+                className="object-cover transition-transform duration-700 group-hover/image:scale-105" 
+                priority={priority}
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover/image:opacity-100 transition-opacity" />
             </div>
           )}
         </CardContent>
 
-        {/* Interactividad Social (Likes, Comentarios) */}
-        <CardFooter className="flex flex-col border-t border-white/5 p-0">
-          <div className="flex items-center justify-between p-4 w-full">
-            <div className="flex items-center gap-1 sm:gap-2">
+        {/* Interactividad Social */}
+        <CardFooter className="flex flex-col border-t border-white/5 p-0 bg-white/[0.02]">
+          <div className="flex items-center justify-between px-6 py-4 w-full">
+            <div className="flex items-center gap-3">
               <Button 
                 variant="ghost" 
                 size="sm" 
                 onClick={handleLike}
-                className={cn("gap-2 rounded-full transition-all px-4", isLiked ? "text-red-500 bg-red-500/10" : "hover:text-red-500 hover:bg-red-500/10 group")}
+                className={cn("gap-2.5 rounded-2xl transition-all px-5 h-11", isLiked ? "text-red-500 bg-red-500/10" : "text-muted-foreground hover:text-red-500 hover:bg-red-500/5 group")}
               >
-                <Heart className={cn("w-4 h-4 transition-transform active:scale-150", isLiked && "fill-current")} />
-                <span className="text-xs font-bold">{likes}</span>
+                <Heart className={cn("w-5 h-5 transition-transform active:scale-150", isLiked && "fill-current")} />
+                <span className="text-sm font-black">{likes}</span>
               </Button>
               <Button 
                 variant="ghost" 
                 size="sm" 
                 onClick={handleToggleComments}
-                className={cn("gap-2 rounded-full transition-all px-4", showComments ? "text-primary bg-primary/10" : "hover:text-primary hover:bg-primary/10")}
+                className={cn("gap-2.5 rounded-2xl transition-all px-5 h-11", showComments ? "text-primary bg-primary/10" : "text-muted-foreground hover:text-primary hover:bg-primary/5")}
               >
-                <MessageSquare className="w-4 h-4" />
-                <span className="text-xs font-bold">{initialCommentsCount}</span>
+                <MessageSquare className="w-5 h-5" />
+                <span className="text-sm font-black">{initialCommentsCount}</span>
               </Button>
-              <Button variant="ghost" size="sm" className="gap-2 rounded-full hover:text-green-500 hover:bg-green-500/10 px-4">
-                <Repeat className="w-4 h-4" />
-                <span className="text-xs font-bold">{shares}</span>
+              <Button variant="ghost" size="sm" className="gap-2.5 rounded-2xl text-muted-foreground hover:text-green-500 hover:bg-green-500/5 px-5 h-11">
+                <Repeat className="w-5 h-5" />
+                <span className="text-sm font-black uppercase tracking-tighter">{shares}</span>
               </Button>
             </div>
-            <div className="flex items-center gap-1">
-              <Button variant="ghost" size="icon" className="rounded-full hover:text-primary transition-all">
-                <Share2 className="w-4 h-4" />
+            
+            <div className="flex items-center gap-2">
+              <Button variant="ghost" size="icon" className="rounded-xl text-muted-foreground hover:text-white hover:bg-white/5 w-10 h-10">
+                <Bookmark className="w-5 h-5" />
               </Button>
-              <Button variant="ghost" size="icon" className="rounded-full hover:text-primary transition-all">
-                <Bookmark className="w-4 h-4" />
+              <Button variant="ghost" size="icon" className="rounded-xl text-muted-foreground hover:text-white hover:bg-white/5 w-10 h-10">
+                <Share2 className="w-5 h-5" />
               </Button>
             </div>
           </div>
 
           {showComments && (
-            <div className="w-full px-5 pb-5 animate-fade-in border-t border-white/5 pt-4">
-              <div className="flex gap-3 mb-6">
-                <Avatar className="h-8 w-8 border border-white/10">
-                  <AvatarImage src={profile?.photoURL} />
+            <div className="w-full px-6 pb-8 animate-fade-in border-t border-white/5 pt-6 bg-[#030303]/40">
+              <div className="flex gap-4 mb-8">
+                <Avatar className="h-10 w-10 border border-white/10 shrink-0">
+                  <AvatarImage src={profile?.photoURL} className="object-cover" />
+                  <AvatarFallback className="bg-primary/20 text-primary font-black uppercase">{profile?.displayName?.charAt(0)}</AvatarFallback>
                 </Avatar>
-                <div className="flex-1 flex gap-2">
-                  <Input 
-                    value={newComment}
-                    onChange={e => setNewComment(e.target.value)}
-                    placeholder="Escribe un comentario brillante..." 
-                    className="bg-white/5 border-white/10 rounded-xl h-10 text-xs text-white"
-                    onKeyPress={e => e.key === 'Enter' && handleAddComment()}
-                  />
-                  <Button onClick={handleAddComment} size="icon" className="h-10 w-10 shrink-0 bg-primary hover:bg-primary/80 rounded-xl shadow-lg shadow-primary/20">
-                    <Send className="w-4 h-4" />
-                  </Button>
+                <div className="flex-1 space-y-3">
+                  <div className="flex gap-3 relative">
+                    <Input 
+                      value={newComment}
+                      onChange={e => setNewComment(e.target.value)}
+                      placeholder="Escribe un comentario brillante..." 
+                      className="bg-white/5 border-white/5 rounded-2xl h-12 text-sm text-white px-5 focus:bg-white/10 transition-all placeholder:text-muted-foreground/30"
+                      onKeyPress={e => e.key === 'Enter' && handleAddComment()}
+                    />
+                    <div className="absolute right-14 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                        <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            onClick={() => { setShowEmojiPicker(!showEmojiPicker); setShowStickerPicker(false); }}
+                            className={cn("h-8 w-8 rounded-lg hover:bg-white/10 transition-colors", showEmojiPicker ? "text-primary bg-primary/10" : "text-muted-foreground")}
+                        >
+                            <Smile className="w-4 h-4" />
+                        </Button>
+                        <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            onClick={() => { setShowStickerPicker(!showStickerPicker); setShowEmojiPicker(false); }}
+                            className={cn("h-8 w-8 rounded-lg hover:bg-white/10 transition-colors", showStickerPicker ? "text-accent bg-accent/10" : "text-muted-foreground")}
+                        >
+                            <Ghost className="w-4 h-4" />
+                        </Button>
+                    </div>
+                    <Button onClick={handleAddComment} size="icon" className="h-12 w-12 shrink-0 bg-primary hover:bg-primary/80 rounded-2xl shadow-xl shadow-primary/20 transition-all active:scale-95">
+                      <Send className="w-5 h-5" />
+                    </Button>
+                  </div>
+
+                  {/* Emoji Picker Popover */}
+                  {showEmojiPicker && (
+                      <div className="p-3 bg-[#0a0a15] border border-white/10 rounded-2xl flex flex-wrap gap-2 animate-in zoom-in-95 duration-200">
+                          {COMMON_EMOJIS.map(emoji => (
+                              <button 
+                                key={emoji} 
+                                onClick={() => handleEmojiSelect(emoji)}
+                                className="text-xl hover:scale-125 transition-transform p-1"
+                              >
+                                  {emoji}
+                              </button>
+                          ))}
+                      </div>
+                  )}
+
+                  {/* Sticker Picker Popover */}
+                  {showStickerPicker && (
+                      <div className="p-4 bg-[#0a0a15] border border-white/10 rounded-3xl grid grid-cols-4 gap-3 animate-in fade-in slide-in-from-top-4 duration-300 shadow-2xl">
+                          {NOVA_STICKERS.map((sticker, idx) => (
+                              <button 
+                                key={idx} 
+                                onClick={() => handleStickerSelect(sticker)}
+                                className="aspect-square rounded-xl overflow-hidden border border-white/5 hover:border-accent hover:scale-110 transition-all bg-white/5 p-1 group"
+                              >
+                                  <Image src={sticker} fill className="object-contain group-hover:rotate-6 transition-transform" alt="Sticker" />
+                              </button>
+                          ))}
+                      </div>
+                  )}
                 </div>
               </div>
 
-              <ScrollArea className="max-h-[300px] pr-4">
-                <div className="space-y-4">
+              <ScrollArea className="max-h-[400px] pr-4">
+                <div className="space-y-6">
                   {postComments.map((comment) => (
-                    <div key={comment.id} className="flex gap-3 group">
-                      <Avatar className="h-8 w-8 shrink-0 border border-white/10">
-                        <AvatarImage src={comment.authorAvatar} />
+                    <div key={comment.id} className="flex gap-4 group animate-fade-in relative">
+                      <Avatar className="h-10 w-10 shrink-0 border border-white/5 shadow-lg group-hover:border-primary/30 transition-colors">
+                        <AvatarImage src={comment.authorAvatar} className="object-cover" />
+                        <AvatarFallback className="bg-primary/10 text-primary font-black uppercase text-xs">{comment.authorName[0]}</AvatarFallback>
                       </Avatar>
-                      <div className="flex-1 bg-white/5 p-3 rounded-2xl border border-white/5">
-                        <div className="flex justify-between items-center mb-1">
-                          <span className="text-[11px] font-black uppercase tracking-tighter">{comment.authorName}</span>
-                          <span className="text-[9px] text-muted-foreground">
-                            {comment.createdAt ? formatDistanceToNow(comment.createdAt.toDate(), { locale: es, addSuffix: true }) : 'Enviando...'}
-                          </span>
+                      <div className="flex-1 space-y-2">
+                        <div className="bg-white/[0.03] border border-white/5 rounded-2xl p-4 group-hover:bg-white/[0.05] transition-all relative">
+                          <div className="flex justify-between items-center mb-1">
+                            <p className="text-[10px] font-black text-primary uppercase tracking-widest italic">@{comment.authorName.toLowerCase().replace(/\s/g, '_')}</p>
+                            <div className="flex items-center gap-2">
+                                <span className="text-[10px] font-bold text-muted-foreground uppercase opacity-40">
+                                  {comment.createdAt ? formatDistanceToNow(comment.createdAt.toDate(), { locale: es, addSuffix: true }) : 'Transmitiendo...'}
+                                </span>
+                                {user?.uid === comment.authorId && (
+                                    <button 
+                                        onClick={() => deleteComment(comment.id!, id)}
+                                        className="text-red-500 opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-red-500/10 rounded-lg"
+                                    >
+                                        <Trash2 className="w-3 h-3" />
+                                    </button>
+                                )}
+                            </div>
+                          </div>
+                          {comment.text && <p className="text-sm text-white/90 leading-relaxed font-medium">{comment.text}</p>}
+                          {comment.stickerUrl && (
+                            <div className="mt-3 relative w-32 h-32 group/sticker transition-transform hover:scale-110 active:scale-95 duration-300">
+                                <img src={comment.stickerUrl} alt="Sticker" className="w-full h-full object-contain drop-shadow-[0_0_15px_rgba(255,255,255,0.1)]" />
+                                <div className="absolute inset-0 bg-primary/10 rounded-xl opacity-0 group-hover/sticker:opacity-100 transition-opacity pointer-events-none" />
+                            </div>
+                          )}
                         </div>
-                        <p className="text-xs leading-relaxed">{comment.text}</p>
                       </div>
                     </div>
                   ))}
                   {postComments.length === 0 && (
-                    <p className="text-center text-[10px] text-muted-foreground uppercase font-black py-4">Sé el primero en comentar algo épico.</p>
+                    <div className="text-center py-8">
+                       <p className="text-[11px] text-muted-foreground uppercase font-black tracking-[0.3em] opacity-30 italic">Sin transmisiones entrantes</p>
+                    </div>
                   )}
                 </div>
               </ScrollArea>

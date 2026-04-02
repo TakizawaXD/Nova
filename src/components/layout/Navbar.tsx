@@ -230,7 +230,7 @@ export function Navbar() {
                         } else {
                           root.className = 'dark theme-' + th.name;
                         }
-                        localStorage.setItem('nova-theme', th.name);
+                        localStorage.setItem(user ? `nova-theme-${user.uid}` : 'nova-theme-guest', th.name);
                     }}
                     className={cn(
                         "w-7 h-7 sm:w-8 sm:h-8 rounded-full transition-all hover:scale-125 active:scale-95 border border-white/20 shadow-lg relative group",

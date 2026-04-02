@@ -33,7 +33,7 @@ export function NovaAI() {
   useEffect(() => {
     if (profile && messages.length === 0) {
       setMessages([
-        { role: 'ai', content: `Hola ${profile.displayName.split(' ')[0]}, soy NovaAI. He analizado tu perfil y estoy lista para ayudarte a optimizar tu experiencia en Nova. ¿En qué puedo asistirte hoy?` }
+        { role: 'ai', content: `Hola ${(profile.username || profile.displayName?.split(' ')[0]) ?? 'explorador'}, soy NovaAI. He analizado tu perfil y estoy lista para ayudarte a optimizar tu experiencia en Nova. ¿En qué puedo asistirte hoy?` }
       ]);
     }
   }, [profile]);

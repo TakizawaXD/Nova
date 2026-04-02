@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { onAuthStateChanged, User } from 'firebase/auth';
-import { doc, onSnapshot } from 'firebase/firestore';
+import { doc, onSnapshot, setDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 
 interface AuthContextType {
@@ -60,7 +60,26 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       }
     );
 
-    return () => unsubscribeProfile();
+    // Heartbeat de Presencia
+    const syncPresence = () => {
+      setDoc(profileRef, { status: 'online', lastSeen: serverTimestamp() }, { merge: true }).catch(console.error);
+    };
+    syncPresence();
+    const presenceInterval = setInterval(syncPresence, 60000);
+
+    const handleUnload = () => {
+      // Intentamos sincronizar offline justo antes de salir
+      const url = `https://firestore.googleapis.com/v1/projects/${process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID}/databases/(default)/documents/users/${user.uid}?updateMask.fieldPaths=status`;
+      navigator.sendBeacon ? navigator.sendBeacon(url, JSON.stringify({ fields: { status: { stringValue: 'offline' } } })) : setDoc(profileRef, { status: 'offline', lastSeen: serverTimestamp() }, { merge: true });
+    };
+    window.addEventListener('beforeunload', handleUnload);
+
+    return () => {
+      unsubscribeProfile();
+      clearInterval(presenceInterval);
+      window.removeEventListener('beforeunload', handleUnload);
+      setDoc(profileRef, { status: 'offline', lastSeen: serverTimestamp() }, { merge: true }).catch(console.error);
+    };
   }, [user]);
 
   return (

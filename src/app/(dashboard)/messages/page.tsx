@@ -2,14 +2,14 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { Search, Send, Phone, Video, Info, Paperclip, Smile, Image as ImageIcon, Loader2, MessageSquare, Plus, ChevronLeft, Trash2, Mic, Square, Play, Pause } from 'lucide-react';
+import { Search, Send, Phone, Video, Info, Paperclip, Smile, Image as ImageIcon, Loader2, MessageSquare, Plus, ChevronLeft, Trash2, Mic, Square, Play, Pause, CheckCheck } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useAuth } from '@/context/AuthContext';
-import { sendMessage, subscribeToMessages, subscribeToUserChats, Message, getAllUsers, startDirectChat, deleteMessage, UserProfile, setTypingStatus } from '@/lib/db';
+import { sendMessage, subscribeToMessages, subscribeToUserChats, Message, getAllUsers, startDirectChat, deleteMessage, UserProfile, setTypingStatus, joinGroup } from '@/lib/db';
 import { storage, db } from '@/lib/firebase';
 import { uploadBytes, getDownloadURL, ref as sRef } from 'firebase/storage';
 import { addDoc, collection, serverTimestamp, updateDoc, doc } from 'firebase/firestore';
@@ -47,9 +47,10 @@ export default function MessagesPage() {
 
     const unsubscribe = subscribeToUserChats(user.uid, (data) => {
       setChats(data);
-      if (data.length > 0 && !selectedChat && !showMobileChat) {
-        // En desktop seleccionamos el primero por defecto
-        if (window.innerWidth > 768) setSelectedChat(data[0]);
+      if (data.length > 0 && !showMobileChat) {
+        if (window.innerWidth > 768) {
+          setSelectedChat((prev: any) => prev || data[0]);
+        }
       }
       setLoading(false);
     });
@@ -58,12 +59,18 @@ export default function MessagesPage() {
 
   // Subscribe to messages when a chat is selected
   useEffect(() => {
-    if (!selectedChat) return;
+    if (!selectedChat || !user) return;
     const unsubscribe = subscribeToMessages(selectedChat.id, (data) => {
       setMessages(data);
+      // Actualizar lastRead (Visto)
+      if (data.length > 0) {
+        updateDoc(doc(db, 'chats', selectedChat.id), {
+          [`lastRead.${user.uid}`]: serverTimestamp()
+        }).catch(console.error);
+      }
     });
     return () => unsubscribe();
-  }, [selectedChat]);
+  }, [selectedChat, user]);
 
   const handleSelectChat = (chat: any) => {
     setSelectedChat(chat);
@@ -323,7 +330,10 @@ export default function MessagesPage() {
                 <div className="min-w-0 flex flex-col justify-center">
                   <h3 className="text-base font-semibold text-white tracking-tight truncate leading-tight">{currentOtherUser.name}</h3>
                   <div className="flex flex-col">
-                     <span className="text-xs text-muted-foreground truncate leading-none mt-0.5">Activo(a) ahora</span>
+                     <span className="text-xs text-muted-foreground truncate leading-none mt-0.5">
+                       {currentOtherUser.status === 'online' ? <span className="text-green-500 font-medium">🟢 En línea</span> : 
+                         currentOtherUser.lastSeen ? `Últ. vez: ${formatDistanceToNow(currentOtherUser.lastSeen?.toDate?.() || new Date(), { locale: es })}` : 'Desconectado'}
+                     </span>
                   </div>
                 </div>
               </div>
@@ -378,8 +388,56 @@ export default function MessagesPage() {
                                 <span className="text-[10px] font-bold opacity-70">Voz</span>
                               </div>
                           ) : (
-                              <p className="whitespace-pre-wrap break-words">{msg.text}</p>
+                              <div className="whitespace-pre-wrap break-words">
+                                {(() => {
+                                  const ytOrNovaRegex = /(https?:\/\/[^\s]+)/g;
+                                  if (!msg.text) return msg.text;
+                                  if (!msg.text.includes('/nova/')) return msg.text;
+                                  
+                                  const parts = [];
+                                  let lastIndex = 0;
+                                  let match;
+                                  while ((match = ytOrNovaRegex.exec(msg.text)) !== null) {
+                                    if (match.index > lastIndex) {
+                                      parts.push(<span key={"t"+match.index}>{msg.text.substring(lastIndex, match.index)}</span>);
+                                    }
+                                    const url = match[0];
+                                    if (url.includes('/nova/')) {
+                                      const code = url.split('/nova/')[1].split(' ')[0];
+                                      parts.push(
+                                        <div key={match.index} className="my-2 p-3 bg-black/40 rounded-xl border border-white/10 flex flex-col gap-2 min-w-[200px] shadow-lg">
+                                          <span className="text-[10px] font-black text-accent uppercase tracking-widest break-all line-clamp-1">Invitación: {code}</span>
+                                          <Button 
+                                            size="sm"
+                                            onClick={() => { 
+                                              joinGroup(code, user!.uid)
+                                                .then(() => window.location.href = '/communities')
+                                                .catch(e => console.error(e)); 
+                                            }}
+                                            className="w-full bg-accent hover:bg-accent/80 text-background font-black text-xs h-9"
+                                          >
+                                            UNIRSE A LA COMUNIDAD
+                                          </Button>
+                                        </div>
+                                      );
+                                    } else {
+                                      parts.push(<a key={match.index} href={url} target="_blank" rel="noreferrer" className="text-blue-400 hover:underline">{url}</a>);
+                                    }
+                                    lastIndex = ytOrNovaRegex.lastIndex;
+                                  }
+                                  if (lastIndex < msg.text.length) {
+                                    parts.push(<span key="last">{msg.text.substring(lastIndex)}</span>);
+                                  }
+                                  return parts;
+                                })()}
+                              </div>
                           )}
+                          <div className={cn("flex items-center gap-1 mt-1.5 text-[10px] font-medium opacity-80", isMe ? "text-white/90 justify-end" : "text-white/60")}>
+                            {formatDistanceToNow(msg.createdAt?.toDate?.() || new Date(), { locale: es }).split(' ')[0]}
+                            {isMe && (
+                              <CheckCheck className={cn("w-3.5 h-3.5 shrink-0", ((chats.find(c => c.id === selectedChat.id)?.lastRead?.[currentOtherUser?.uid]?.toDate?.() || 0) >= (msg.createdAt?.toDate?.() || 0)) ? "text-blue-400" : "text-white/40")} />
+                            )}
+                          </div>
                           {isMe && (
                             <button 
                               onClick={() => deleteMessage(msg.id!)}

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Plus, Hash, Users, Settings, Send, Loader2, ShieldAlert, ChevronLeft, Compass, Trash2, Share2, Copy, Image, Smile, UserPlus, Check, Search } from 'lucide-react';
+import { Plus, Hash, Users, Settings, Send, Loader2, ShieldAlert, ChevronLeft, Compass, Trash2, Share2, Copy, Image, Smile, UserPlus, Check, Search, Camera } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -35,6 +35,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import { uploadToSupabase } from '@/lib/supabase';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -68,6 +69,9 @@ export default function CommunitiesPage() {
   const [inviteSearch, setInviteSearch] = useState('');
   const [isCopied, setIsCopied] = useState(false);
   const [uniqueInviteURL, setUniqueInviteURL] = useState(''); // Current link in input
+  const [groupAvatarFile, setGroupAvatarFile] = useState<File | null>(null);
+  const [groupAvatarPreview, setGroupAvatarPreview] = useState<string | null>(null);
+  const groupAvatarInputRef = useRef<HTMLInputElement>(null);
   // Cargar Grupos
   useEffect(() => {
     if (!user) return;
@@ -86,7 +90,7 @@ export default function CommunitiesPage() {
     return () => { unsub(); clearTimeout(t); };
   }, [user]);
 
-  // Cargar Todas las Grupos (Discovery)
+  // Cargar Todas las Grupos (Discovery) — tanto en desktop como mobile
   useEffect(() => {
     if (!isExploreMode) return;
     const unsub = subscribeToAllGroups(setAllGroups);
@@ -160,15 +164,23 @@ export default function CommunitiesPage() {
 
   const handleCreateGroup = async () => {
     if (!newGroupName.trim() || !user || !profile) return;
+    setLoading(true);
     try {
-      const avatarGen = `https://ui-avatars.com/api/?name=${newGroupName}&background=random`;
-      const id = await createGroup(newGroupName, 'Nueva comunidad Nova', avatarGen, user.uid);
+      let avatarUrl = `https://ui-avatars.com/api/?name=${newGroupName}&background=random`;
+      
+      if (groupAvatarFile) {
+        avatarUrl = await uploadToSupabase(groupAvatarFile, 'avatars', `communities/${user.uid}/${Date.now()}`);
+      }
+
+      const id = await createGroup(newGroupName, 'Nueva comunidad Nova', avatarUrl, user.uid);
       setIsCreatingGroup(false);
       setNewGroupName('');
+      setGroupAvatarFile(null);
+      setGroupAvatarPreview(null);
       toast({ title: 'Comunidad creada', description: '¡Bienvenido a tu nueva comunidad!' });
       
       // Auto-seleccionar la comunidad creada
-      const newG = { id, name: newGroupName, description: 'Nueva comunidad Nova', avatar: avatarGen, ownerId: user.uid, membersCount: 1 };
+      const newG = { id, name: newGroupName, description: 'Nueva comunidad Nova', avatar: avatarUrl, ownerId: user.uid, membersCount: 1 };
       setActiveGroup(newG as Group);
       setIsExploreMode(false);
     } catch (e: any) {
@@ -178,6 +190,8 @@ export default function CommunitiesPage() {
         title: 'Error de Fundación', 
         description: e.message || 'Ocurrió un error al crear la comunidad.'
       });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -294,48 +308,204 @@ export default function CommunitiesPage() {
   return (
     <div className="flex h-[calc(100vh-160px)] md:h-[calc(100vh-140px)] bg-[#030303]/40 backdrop-blur-3xl border border-white/5 rounded-[2.5rem] md:rounded-[3rem] overflow-hidden animate-fade-in shadow-2xl relative">
       
-      {/* 1. Columna de Comunidades */}
+      {/* 1A. Vista Mobile: Selector de Comunidades (pantalla completa, card-based) */}
       <div className={cn(
-        "w-full md:w-[110px] bg-black/60 border-r border-white/5 flex flex-col items-center py-8 space-y-8 overflow-y-auto no-scrollbar z-30 transition-all duration-300",
-        viewMode !== 'servers' ? "hidden md:flex" : "flex"
+        "w-full absolute inset-0 z-40 flex flex-col bg-black/95 backdrop-blur-3xl md:hidden transition-all duration-300",
+        viewMode !== 'servers' ? "opacity-0 pointer-events-none -translate-y-2" : "opacity-100 translate-y-0"
       )}>
+        {/* Header Mobile */}
+        <div className="px-6 pt-8 pb-4">
+          <div className="flex items-center justify-between mb-2">
+            <div>
+              <h1 className="text-2xl font-black text-white uppercase tracking-tight">Comunidades</h1>
+              <p className="text-xs text-muted-foreground font-medium mt-0.5">Tu red de ciudadanos Nova</p>
+            </div>
+            <button
+              onClick={() => setIsCreatingGroup(true)}
+              className="w-10 h-10 rounded-2xl bg-primary/20 border border-primary/30 flex items-center justify-center text-primary hover:bg-primary/30 transition-all active:scale-95"
+            >
+              <Plus className="w-5 h-5" />
+            </button>
+          </div>
+          {/* Tabs: Mis Comunidades / Explorar */}
+          <div className="flex gap-2 mt-4 p-1 bg-white/5 rounded-2xl">
+            <button
+              onClick={() => setIsExploreMode(false)}
+              className={cn(
+                "flex-1 h-9 rounded-xl text-xs font-black uppercase tracking-wide transition-all",
+                !isExploreMode ? "bg-primary text-white shadow-lg shadow-primary/30" : "text-muted-foreground"
+              )}
+            >
+              Mis Comunidades
+            </button>
+            <button
+              onClick={() => { setIsExploreMode(true); }}
+              className={cn(
+                "flex-1 h-9 rounded-xl text-xs font-black uppercase tracking-wide transition-all",
+                isExploreMode ? "bg-primary text-white shadow-lg shadow-primary/30" : "text-muted-foreground"
+              )}
+            >
+              Explorar
+            </button>
+          </div>
+        </div>
+
+        {/* Lista de Comunidades / Explorar */}
+        <div className="flex-1 overflow-y-auto px-4 pb-6 space-y-3">
+          {!isExploreMode ? (
+            groups.length === 0 ? (
+              <div className="flex flex-col items-center justify-center h-full gap-5 pb-20">
+                <div className="w-24 h-24 rounded-[2rem] bg-primary/10 border border-primary/20 flex items-center justify-center">
+                  <Users className="w-10 h-10 text-primary" />
+                </div>
+                <div className="text-center space-y-1.5">
+                  <p className="text-white font-black text-lg uppercase tracking-tight">Sin comunidades</p>
+                  <p className="text-muted-foreground text-sm">Funda la primera o únete a una existente.</p>
+                </div>
+                <button
+                  onClick={() => setIsCreatingGroup(true)}
+                  className="h-12 px-8 rounded-2xl bg-primary text-white font-black text-xs uppercase tracking-widest shadow-lg shadow-primary/20 active:scale-95 transition-all"
+                >
+                  ✦ Fundar Comunidad
+                </button>
+              </div>
+            ) : (
+              groups.map(g => (
+                <button
+                  key={g.id}
+                  onClick={() => handleSelectGroup(g)}
+                  className={cn(
+                    "w-full flex items-center gap-4 p-4 rounded-[1.5rem] border transition-all text-left active:scale-[0.98]",
+                    activeGroup?.id === g.id
+                      ? "bg-primary/15 border-primary/40 shadow-lg shadow-primary/10"
+                      : "bg-white/[0.04] border-white/[0.07] hover:bg-white/[0.07]"
+                  )}
+                >
+                  <Avatar className={cn(
+                    "w-14 h-14 shrink-0 transition-all",
+                    activeGroup?.id === g.id ? "rounded-2xl ring-2 ring-primary/60" : "rounded-[1.5rem]"
+                  )}>
+                    <AvatarImage src={g.avatar} className="object-cover" />
+                    <AvatarFallback className={cn(
+                      "text-white font-black text-xl",
+                      activeGroup?.id === g.id ? "bg-primary" : "bg-gradient-to-br from-primary/50 to-violet-700/50"
+                    )}>{g.name[0]}</AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-black text-white text-base truncate">{g.name}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1.5">
+                      <Users className="w-3 h-3" /> {g.membersCount || 1} miembro{(g.membersCount || 1) !== 1 ? 's' : ''}
+                    </p>
+                  </div>
+                  {activeGroup?.id === g.id && (
+                    <div className="w-2 h-2 rounded-full bg-primary shadow-[0_0_8px_theme(colors.primary.DEFAULT)] shrink-0" />
+                  )}
+                  <ChevronLeft className="w-5 h-5 text-muted-foreground rotate-180 shrink-0" />
+                </button>
+              ))
+            )
+          ) : (
+            <div className="space-y-3">
+              {allGroups.map(g => {
+                const isJoined = groups.some(myG => myG.id === g.id);
+                return (
+                  <div key={g.id} className="w-full flex items-center gap-4 p-4 rounded-[1.5rem] bg-white/[0.04] border border-white/[0.07]">
+                    <Avatar className="w-14 h-14 shrink-0 rounded-[1.5rem]">
+                      <AvatarImage src={g.avatar} className="object-cover" />
+                      <AvatarFallback className="bg-gradient-to-br from-primary/50 to-violet-700/50 text-white font-black text-xl">{g.name[0]}</AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-black text-white text-base truncate">{g.name}</p>
+                      <p className="text-xs text-muted-foreground line-clamp-1 mt-0.5">{g.description}</p>
+                    </div>
+                    <button
+                      onClick={() => !isJoined && joinGroup(g.id!, user!.uid)}
+                      disabled={isJoined}
+                      className={cn(
+                        "shrink-0 h-9 px-4 rounded-xl font-black text-[11px] uppercase tracking-wide transition-all active:scale-95",
+                        isJoined ? "bg-white/10 text-muted-foreground" : "bg-primary text-white shadow-md shadow-primary/30"
+                      )}
+                    >
+                      {isJoined ? 'Unido' : 'Unirse'}
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* 1B. Columna Desktop: Icon Sidebar (solo visible en md+) */}
+      <div className={cn(
+        "w-full md:w-[88px] bg-gradient-to-b from-black/80 via-black/60 to-black/80 border-r border-white/[0.06] flex-col items-center py-6 gap-3 overflow-y-auto no-scrollbar z-30 transition-all duration-300 backdrop-blur-xl hidden md:flex"
+      )}>
+        {/* Botón Inicio */}
         <div 
           onClick={() => setIsExploreMode(false)}
           className={cn(
-            "w-16 h-16 rounded-2xl flex items-center justify-center border transition-all cursor-pointer shadow-2xl hover:scale-110 active:scale-95 group",
-            !isExploreMode ? "bg-primary/20 border-primary/40 text-primary" : "bg-white/5 border-white/10 text-muted-foreground hover:text-white"
+            "relative w-12 h-12 rounded-2xl flex items-center justify-center transition-all cursor-pointer group",
+            !isExploreMode 
+              ? "bg-primary rounded-xl shadow-lg shadow-primary/40" 
+              : "bg-white/5 hover:bg-primary/20 text-muted-foreground hover:text-white hover:rounded-xl"
           )}
+          title="Mis Comunidades"
         >
-          <Hash className="w-8 h-8 group-hover:rotate-12 transition-transform" />
+          <Hash className={cn("w-5 h-5 group-hover:scale-110 transition-transform", !isExploreMode ? "text-white" : "")} />
+          {!isExploreMode && <span className="absolute -left-1 top-1/2 -translate-y-1/2 w-1 h-6 bg-white rounded-r-full" />}
         </div>
 
+        {/* Botón Explorar */}
         <div 
           onClick={() => setIsExploreMode(true)}
           className={cn(
-            "w-16 h-16 rounded-2xl flex items-center justify-center border transition-all cursor-pointer shadow-2xl hover:scale-110 active:scale-95 group",
-            isExploreMode ? "bg-primary/20 border-primary/40 text-primary" : "bg-white/5 border-white/10 text-muted-foreground hover:text-white"
+            "relative w-12 h-12 rounded-2xl flex items-center justify-center transition-all cursor-pointer group",
+            isExploreMode 
+              ? "bg-primary rounded-xl shadow-lg shadow-primary/40" 
+              : "bg-white/5 hover:bg-primary/20 text-muted-foreground hover:text-white hover:rounded-xl"
           )}
+          title="Explorar universos"
         >
-          <Compass className="w-8 h-8 group-hover:rotate-12 transition-transform" />
+          <Compass className={cn("w-5 h-5 group-hover:scale-110 transition-transform", isExploreMode ? "text-white" : "")} />
+          {isExploreMode && <span className="absolute -left-1 top-1/2 -translate-y-1/2 w-1 h-6 bg-white rounded-r-full" />}
         </div>
         
-        <div className="w-12 h-px bg-white/10 rounded-full" />
+        {/* Separador premium */}
+        <div className="w-8 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent my-1 rounded-full" />
         
         {groups.map(g => (
           <div key={g.id} className="relative group/server cursor-pointer" onClick={() => handleSelectGroup(g)}>
-            <div className={cn("absolute -left-1 top-1/2 -translate-y-1/2 w-2 bg-primary rounded-r-full transition-all shadow-[0_0_15px_theme(colors.primary.DEFAULT)]", activeGroup?.id === g.id ? "h-12" : "h-0 group-hover/server:h-6")} />
-            <Avatar className={cn("w-16 h-16 transition-all duration-500 shadow-2xl", activeGroup?.id === g.id ? "rounded-2xl border-2 border-primary ring-4 ring-primary/10" : "rounded-[2rem] hover:rounded-2xl border border-white/5")}>
-              <AvatarImage src={g.avatar} alt="Imagen" className="object-cover" />
-              <AvatarFallback className="bg-white/5 text-primary font-black text-2xl">{g.name[0]}</AvatarFallback>
+            {/* Indicador activo */}
+            <span className={cn(
+              "absolute -left-3 top-1/2 -translate-y-1/2 w-1 bg-white rounded-r-full transition-all duration-300",
+              activeGroup?.id === g.id ? "h-8 opacity-100" : "h-0 opacity-0 group-hover/server:h-5 group-hover/server:opacity-60"
+            )} />
+            {/* Tooltip */}
+            <div className="absolute left-[4.5rem] top-1/2 -translate-y-1/2 bg-[#111]/95 text-white text-xs font-black uppercase tracking-wide px-3 py-2 rounded-xl whitespace-nowrap opacity-0 pointer-events-none group-hover/server:opacity-100 transition-opacity z-50 border border-white/10 shadow-xl">
+              {g.name}
+            </div>
+            <Avatar className={cn(
+              "w-12 h-12 transition-all duration-300 shadow-xl",
+              activeGroup?.id === g.id 
+                ? "rounded-xl ring-2 ring-primary/80 shadow-primary/30" 
+                : "rounded-[1.5rem] hover:rounded-xl border border-white/5 hover:border-primary/30"
+            )}>
+              <AvatarImage src={g.avatar} alt={g.name} className="object-cover" />
+              <AvatarFallback className={cn(
+                "text-white font-black text-lg",
+                activeGroup?.id === g.id ? "bg-primary" : "bg-gradient-to-br from-primary/40 to-violet-700/40"
+              )}>{g.name[0]}</AvatarFallback>
             </Avatar>
           </div>
         ))}
         
+        {/* Botón crear comunidad */}
         <button 
           onClick={() => setIsCreatingGroup(true)}
-          className="w-16 h-16 rounded-[2rem] bg-white/5 hover:bg-green-500 hover:text-white hover:rounded-2xl text-green-500 flex items-center justify-center border border-dashed border-white/20 cursor-pointer transition-all duration-300 shadow-xl group"
+          className="relative w-12 h-12 rounded-[1.5rem] hover:rounded-xl bg-white/5 hover:bg-emerald-500/20 text-emerald-400 hover:text-emerald-300 flex items-center justify-center border border-white/10 hover:border-emerald-500/30 cursor-pointer transition-all duration-300 shadow-lg group/plus"
+          title="Crear comunidad"
         >
-          <Plus className="w-8 h-8 group-hover:scale-125 transition-transform" />
+          <Plus className="w-5 h-5 group-hover/plus:rotate-90 transition-transform duration-300" />
         </button>
       </div>
 
@@ -347,9 +517,40 @@ export default function CommunitiesPage() {
           </DialogHeader>
           <div className="space-y-10">
             <div className="flex flex-col items-center gap-6">
-                <div className="w-24 h-24 rounded-[2.5rem] bg-primary/10 flex items-center justify-center border-2 border-dashed border-primary/40 text-primary">
-                    <Plus className="w-12 h-12" />
-                </div>
+                <input 
+                  type="file" 
+                  ref={groupAvatarInputRef} 
+                  className="hidden" 
+                  accept="image/*" 
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      setGroupAvatarFile(file);
+                      const reader = new FileReader();
+                      reader.onload = (ev) => setGroupAvatarPreview(ev.target?.result as string);
+                      reader.readAsDataURL(file);
+                    }
+                  }}
+                />
+                <button 
+                  onClick={() => groupAvatarInputRef.current?.click()}
+                  className={cn(
+                    "w-32 h-32 rounded-[2.5rem] bg-primary/10 flex items-center justify-center border-2 border-dashed transition-all relative overflow-hidden group",
+                    groupAvatarPreview ? "border-primary" : "border-primary/40 hover:border-primary"
+                  )}
+                >
+                    {groupAvatarPreview ? (
+                      <img src={groupAvatarPreview} alt="Preview" className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="flex flex-col items-center gap-2">
+                        <Plus className="w-8 h-8 text-primary" />
+                        <span className="text-[10px] font-black uppercase tracking-widest text-primary/60">Logo Comunidad</span>
+                      </div>
+                    )}
+                    <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Camera className="w-8 h-8 text-white" />
+                    </div>
+                </button>
                 <p className="text-muted-foreground font-medium text-center text-lg max-w-sm">Define la identidad de tu nueva comunidad. Estas son el corazón de NovaSphere.</p>
             </div>
 
@@ -878,8 +1079,8 @@ export default function CommunitiesPage() {
                 <h3 className="text-4xl font-black text-white uppercase italic tracking-tighter">Comunidades Activas</h3>
                 <p className="text-muted-foreground font-medium text-lg max-w-sm leading-relaxed">Selecciona una comunidad en el sidebar izquierdo para iniciar la integración con otros ciudadanos.</p>
              </div>
-             <Button onClick={() => setIsCreatingGroup(true)} className="relative z-10 h-16 px-12 rounded-2xl bg-white/5 hover:bg-white/10 text-white font-black uppercase tracking-widest text-[11px] border border-white/5 transition-all shadow-xl hover:shadow-primary/5">
-                Fundar Comunidad Nova
+             <Button onClick={() => setIsCreatingGroup(true)} className="relative z-10 h-14 px-10 rounded-2xl bg-primary hover:bg-primary/80 text-white font-black uppercase tracking-widest text-[11px] shadow-xl shadow-primary/30 transition-all hover:scale-105 active:scale-95">
+                ✦ Fundar Comunidad Nova
              </Button>
           </div>
         )}

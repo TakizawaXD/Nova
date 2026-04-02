@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -24,6 +24,7 @@ import { useTheme } from '@/context/ThemeContext';
 import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { InstallButton } from '@/components/pwa/InstallButton';
+import { uploadToSupabase } from '@/lib/supabase';
 
 type SettingsTab = 'profile' | 'security' | 'notifications' | 'theme' | 'language';
 
@@ -41,6 +42,11 @@ export default function SettingsPage() {
     bannerURL: profile?.bannerURL || ''
   });
 
+  const avatarInputRef = useRef<HTMLInputElement>(null);
+  const bannerInputRef = useRef<HTMLInputElement>(null);
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [bannerFile, setBannerFile] = useState<File | null>(null);
+
   const handleLogout = async () => {
     await signOut(auth);
     router.push('/login');
@@ -50,13 +56,49 @@ export default function SettingsPage() {
     if (!user) return;
     setLoading(true);
     try {
-      await updateDoc(doc(db, 'users', user.uid), editProfile);
+      const updates = { ...editProfile };
+
+      // Upload banner if changed
+      if (bannerFile) {
+        updates.bannerURL = await uploadToSupabase(bannerFile, 'avatars', `${user.uid}/banner`);
+      }
+
+      // Upload avatar if changed
+      if (avatarFile) {
+        updates.photoURL = await uploadToSupabase(avatarFile, 'avatars', `${user.uid}/avatar`);
+      }
+
+      await updateDoc(doc(db, 'users', user.uid), updates);
+      
+      // Update local state and auth profile if needed (though AuthContext usually listens)
+      setEditProfile(updates);
+      setAvatarFile(null);
+      setBannerFile(null);
+
       toast({ title: 'Perfil Sincronizado', description: 'Tus datos han sido actualizados en el núcleo.' });
     } catch (error) {
+      console.error("Error saving profile:", error);
       toast({ variant: 'destructive', title: 'Error', description: 'No se pudo actualizar el perfil.' });
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, type: 'avatar' | 'banner') => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      if (type === 'avatar') {
+        setAvatarFile(file);
+        setEditProfile(prev => ({ ...prev, photoURL: ev.target?.result as string }));
+      } else {
+        setBannerFile(file);
+        setEditProfile(prev => ({ ...prev, bannerURL: ev.target?.result as string }));
+      }
+    };
+    reader.readAsDataURL(file);
   };
 
   const renderContent = () => {
@@ -70,7 +112,19 @@ export default function SettingsPage() {
                     // eslint-disable-next-line @next/next/no-img-element
                     <img src={editProfile.bannerURL} alt="Banner" className="w-full h-full object-cover opacity-50" />
                 )}
-                <Button size="icon" variant="ghost" className="absolute bottom-4 right-4 bg-black/40 rounded-full text-white hover:bg-black/60">
+                <input 
+                  type="file" 
+                  ref={bannerInputRef} 
+                  className="hidden" 
+                  accept="image/*" 
+                  onChange={(e) => handleFileChange(e, 'banner')}
+                />
+                <Button 
+                  size="icon" 
+                  variant="ghost" 
+                  className="absolute bottom-4 right-4 bg-black/40 rounded-full text-white hover:bg-black/60"
+                  onClick={() => bannerInputRef.current?.click()}
+                >
                     <Camera className="w-4 h-4" />
                 </Button>
               </div>
@@ -81,7 +135,17 @@ export default function SettingsPage() {
                             <AvatarImage src={editProfile.photoURL} alt={profile?.displayName} className="object-cover" />
                             <AvatarFallback className="bg-primary/20 text-primary text-2xl font-black">{profile?.displayName?.charAt(0)}</AvatarFallback>
                         </Avatar>
-                        <div className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
+                        <input 
+                          type="file" 
+                          ref={avatarInputRef} 
+                          className="hidden" 
+                          accept="image/*" 
+                          onChange={(e) => handleFileChange(e, 'avatar')}
+                        />
+                        <div 
+                          className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                          onClick={() => avatarInputRef.current?.click()}
+                        >
                             <Camera className="w-6 h-6 text-white" />
                         </div>
                     </div>
@@ -101,12 +165,12 @@ export default function SettingsPage() {
                             />
                         </div>
                         <div className="space-y-2">
-                            <Label className="text-[10px] font-black uppercase tracking-widest ml-1 opacity-60">URL del Avatar</Label>
+                            <Label className="text-[10px] font-black uppercase tracking-widest ml-1 opacity-60">Status Cuántico</Label>
                             <Input 
-                                value={editProfile.photoURL} 
-                                onChange={e => setEditProfile({...editProfile, photoURL: e.target.value})}
-                                className="bg-white/5 border-white/10 rounded-2xl h-14 font-medium" 
-                                placeholder="https://..."
+                                value={editProfile.photoURL.startsWith('data:') ? 'Imagen seleccionada...' : editProfile.photoURL} 
+                                readOnly
+                                className="bg-white/5 border-white/10 rounded-2xl h-14 font-medium opacity-50 cursor-not-allowed" 
+                                placeholder="URL se generará al guardar"
                             />
                         </div>
                     </div>
@@ -226,18 +290,9 @@ export default function SettingsPage() {
 
   return (
     <div className="max-w-5xl mx-auto space-y-8 animate-fade-in pb-20 pt-4">
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-        <div>
-          <h1 className="text-4xl md:text-5xl font-black tracking-tighter uppercase italic leading-none">CONFIGURACIÓN <span className="text-primary truncate">NOVA</span></h1>
-          <p className="text-muted-foreground mt-4 font-medium">Ajusta los parámetros de tu existencia digital en el núcleo.</p>
-        </div>
-        <Button 
-            onClick={handleLogout}
-            variant="ghost" 
-            className="rounded-2xl gap-3 h-14 px-8 text-red-500 hover:bg-red-500/10 font-black uppercase tracking-widest text-[11px] transition-all border border-white/5 md:border-none"
-        >
-            <LogOut className="w-5 h-5" /> Cerrar Sesión
-        </Button>
+      <div>
+        <h1 className="text-3xl md:text-4xl font-black tracking-tighter uppercase italic leading-none">CONFIGURACIÓN <span className="text-primary truncate">NOVA</span></h1>
+        <p className="text-muted-foreground mt-3 font-medium text-sm">Ajusta los parámetros de tu existencia digital en el núcleo.</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12">
@@ -248,6 +303,13 @@ export default function SettingsPage() {
           <SettingsNavItem icon={Bell} label="Avisos" active={activeTab === 'notifications'} onClick={() => setActiveTab('notifications')} />
           <SettingsNavItem icon={Moon} label="Tema" active={activeTab === 'theme'} onClick={() => setActiveTab('theme')} />
           <SettingsNavItem icon={Languages} label="Idioma" active={activeTab === 'language'} onClick={() => setActiveTab('language')} />
+          <Button 
+              onClick={handleLogout}
+              variant="ghost" 
+              className="hidden lg:flex rounded-2xl gap-3 h-11 px-4 mt-4 text-red-500/70 hover:text-red-500 hover:bg-red-500/10 font-black uppercase tracking-widest text-[10px] transition-all border border-red-500/10 hover:border-red-500/20 w-full justify-start"
+          >
+              <LogOut className="w-4 h-4" /> Cerrar Sesión
+          </Button>
         </div>
 
         {/* Dynamic Content Area */}

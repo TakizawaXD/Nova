@@ -10,8 +10,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useAuth } from '@/context/AuthContext';
 import { sendMessage, subscribeToMessages, subscribeToUserChats, Message, getAllUsers, startDirectChat, deleteMessage, UserProfile, setTypingStatus, joinGroup } from '@/lib/db';
-import { storage, db } from '@/lib/firebase';
-import { uploadBytes, getDownloadURL, ref as sRef } from 'firebase/storage';
+import { db } from '@/lib/firebase';
+import { uploadToSupabase } from '@/lib/supabase';
 import { addDoc, collection, serverTimestamp, updateDoc, doc } from 'firebase/firestore';
 import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -37,6 +37,7 @@ export default function MessagesPage() {
   const audioChunksRef = useRef<Blob[]>([]);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const imageInputRef = useRef<HTMLInputElement>(null);
 
   // Subscribe to user chats & load friends
   useEffect(() => {
@@ -104,13 +105,12 @@ export default function MessagesPage() {
         const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
         if (!selectedChat || !user) return;
         setLoading(true);
-        const fileName = `audio_${Date.now()}.webm`;
-        const audioRef = sRef(storage, `chats/${selectedChat.id}/${fileName}`);
         try {
-            await uploadBytes(audioRef, audioBlob);
-            const url = await getDownloadURL(audioRef);
+            const url = await uploadToSupabase(audioBlob, 'audio', `chats/${selectedChat.id}/${Date.now()}.webm`);
             await sendMessage(selectedChat.id, user.uid, 'Mensaje de voz', 'audio', url);
-        } catch(e) { console.error(e); }
+        } catch(e) { 
+          console.error("Error uploading audio:", e);
+        }
         setLoading(false);
       };
 
@@ -167,6 +167,22 @@ export default function MessagesPage() {
         setShowMobileChat(true);
       }
     } catch (e) { console.error(e); }
+  };
+
+  const handleImageFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !selectedChat || !user) return;
+
+    setLoading(true);
+    try {
+      const url = await uploadToSupabase(file, 'media', `chats/${selectedChat.id}/${Date.now()}`);
+      await sendMessage(selectedChat.id, user.uid, 'Imagen', 'image', url);
+    } catch (error) {
+      console.error("Error uploading image to chat:", error);
+    } finally {
+      setLoading(false);
+      if (imageInputRef.current) imageInputRef.current.value = '';
+    }
   };
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -381,11 +397,24 @@ export default function MessagesPage() {
                                 }}>
                                     <Play className="w-4 h-4" />
                                 </Button>
-                                <audio src={msg.mediaUrl} className="hidden" onEnded={(e) => { /* update icon later */ }} />
+                                <audio src={msg.mediaUrl} className="hidden" />
                                 <div className="flex-1 h-1.5 bg-white/20 rounded-full overflow-hidden">
                                     <div className="h-full bg-white w-1/3 rounded-full animate-pulse" />
                                 </div>
                                 <span className="text-[10px] font-bold opacity-70">Voz</span>
+                              </div>
+                          ) : msg.type === 'image' ? (
+                              <div className="relative rounded-xl overflow-hidden border border-white/10 max-w-xs group/img-msg">
+                                <img src={msg.mediaUrl} alt="Adjunto" className="w-full h-auto object-cover max-h-80" />
+                                <div className="absolute inset-0 bg-black/20 opacity-0 group-hover/img-msg:opacity-100 transition-opacity" />
+                              </div>
+                          ) : msg.type === 'sticker' ? (
+                              <div className="w-32 h-32 md:w-40 md:h-40">
+                                <img src={msg.mediaUrl} alt="Sticker" className="w-full h-full object-contain" />
+                              </div>
+                          ) : msg.type === 'video' ? (
+                              <div className="relative rounded-xl overflow-hidden border border-white/10 max-w-xs group/vid-msg">
+                                <video src={msg.mediaUrl} controls className="w-full h-auto max-h-80" />
                               </div>
                           ) : (
                               <div className="whitespace-pre-wrap break-words">
@@ -514,23 +543,42 @@ export default function MessagesPage() {
                   </Button>
                 ) : (
                   <div className="flex gap-1 shrink-0 self-end items-center h-10">
+                    <input 
+                      type="file" 
+                      ref={imageInputRef} 
+                      className="hidden" 
+                      accept="image/*" 
+                      onChange={handleImageFileChange}
+                    />
                     <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full text-white hover:bg-white/10 transition-all" onClick={startRecording}><Mic className="w-5 h-5" /></Button>
-                    <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full text-white hover:bg-white/10 transition-all"><ImageIcon className="w-5 h-5" /></Button>
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className="h-9 w-9 rounded-full text-white hover:bg-white/10 transition-all"
+                      onClick={() => imageInputRef.current?.click()}
+                    >
+                      <ImageIcon className="w-5 h-5" />
+                    </Button>
                   </div>
                 )}
               </div>
             </div>
           </>
         ) : (
-          <div className="flex-1 flex flex-col items-center justify-center p-10 text-center bg-black md:bg-[#0a0a0a]">
-            <div className="w-24 h-24 rounded-full border-[3px] border-white text-white flex items-center justify-center mb-4">
-                <MessageSquare className="w-10 h-10" />
+          <div className="flex-1 flex flex-col items-center justify-center p-10 text-center bg-black md:bg-[#0a0a0a] relative overflow-hidden">
+            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,theme(colors.primary.DEFAULT/0.06),transparent_70%)]" />
+            <div className="relative z-10 flex flex-col items-center gap-6 max-w-xs">
+              <div className="w-28 h-28 rounded-[2.5rem] bg-primary/10 border border-primary/20 flex items-center justify-center shadow-2xl shadow-primary/10 animate-pulse">
+                <MessageSquare className="w-12 h-12 text-primary" />
+              </div>
+              <div className="space-y-2">
+                <h3 className="text-2xl font-black text-white uppercase tracking-tight">Tus Mensajes</h3>
+                <p className="text-muted-foreground text-sm leading-relaxed">Envía notas de voz y mensajes privados a los ciudadanos de Nova.</p>
+              </div>
+              <Button onClick={() => setIsNewMsgOpen(true)} className="h-12 px-8 rounded-2xl bg-primary hover:bg-primary/90 text-white font-black text-xs uppercase tracking-widest shadow-lg shadow-primary/20 transition-all hover:scale-105 active:scale-95">
+                ✦ Nuevo Mensaje
+              </Button>
             </div>
-            <h3 className="text-xl font-bold text-white mb-2">Tus mensajes</h3>
-            <p className="text-muted-foreground text-sm max-w-sm mb-6">Envía fotos y mensajes privados a tus amigos.</p>
-            <Button onClick={() => setIsNewMsgOpen(true)} className="h-9 px-6 rounded-lg bg-primary hover:bg-primary/90 text-white font-semibold text-sm">
-               Enviar mensaje
-            </Button>
           </div>
         )}
       </div>

@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Plus, Loader2, Heart, Trash2, Edit2, MoreVertical, AlertTriangle, Zap } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -11,6 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import NextImage from 'next/image';
 import { Smile, Play } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { uploadToSupabase } from '@/lib/supabase';
 import { 
   Dialog, 
   DialogContent, 
@@ -35,6 +36,9 @@ export function StoryList() {
 
   const [selectedStoryIndex, setSelectedStoryIndex] = useState(0);
   const [selectedAuthorId, setSelectedAuthorId] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [uploadingType, setUploadingType] = useState<'image' | 'video'>('image');
+  const [isUploading, setIsUploading] = useState(false);
 
   useEffect(() => {
     const unsubscribe = subscribeToActiveStories((data) => {
@@ -60,16 +64,26 @@ export function StoryList() {
 
   const authorGroups = Object.values(groupedStories);
 
-  const handleAddStory = async (type: 'image' | 'video' = 'image') => {
-    if (!user || !profile) return;
-    const url = prompt(`Pega la URL de tu ${type === 'video' ? 'video' : 'imagen'}:`, profile.photoURL);
-    if (!url) return;
-    
+  const handleAddStory = (type: 'image' | 'video' = 'image') => {
+    setUploadingType(type);
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user || !profile) return;
+
+    setIsUploading(true);
     try {
-      await createStory(user.uid, profile.displayName, profile.photoURL, url, type);
+      const url = await uploadToSupabase(file, 'media', `stories/${user.uid}/${Date.now()}`);
+      await createStory(user.uid, profile.displayName, profile.photoURL, url, uploadingType);
       toast({ title: "Destello publicado", description: "Tu frecuencia visual ha sido emitida." });
     } catch (error) {
+      console.error("Error posting story:", error);
       toast({ variant: "destructive", title: "Error", description: "Fallo en la emisión cuántica." });
+    } finally {
+      setIsUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
 
@@ -150,12 +164,27 @@ export function StoryList() {
           <DialogContent className="bg-[#050510]/95 backdrop-blur-2xl border border-white/10 rounded-[2.5rem] w-80">
             <DialogHeader><DialogTitle className="text-center font-black uppercase tracking-widest text-xs py-4 text-white">Nuevo Destello</DialogTitle></DialogHeader>
             <div className="grid grid-cols-2 gap-4 p-4">
-              <Button onClick={() => handleAddStory('image')} className="flex flex-col gap-2 h-24 rounded-2xl bg-white/5 border border-white/5 hover:bg-primary/20">
-                <span className="text-2xl">📸</span>
+              <input 
+                type="file" 
+                ref={fileInputRef} 
+                className="hidden" 
+                accept={uploadingType === 'image' ? 'image/*' : 'video/*'} 
+                onChange={handleFileChange}
+              />
+              <Button 
+                onClick={() => handleAddStory('image')} 
+                disabled={isUploading}
+                className="flex flex-col gap-2 h-24 rounded-2xl bg-white/5 border border-white/5 hover:bg-primary/20"
+              >
+                {isUploading && uploadingType === 'image' ? <Loader2 className="w-6 h-6 animate-spin" /> : <span className="text-2xl">📸</span>}
                 <span className="text-[10px] font-black uppercase">Foto</span>
               </Button>
-              <Button onClick={() => handleAddStory('video')} className="flex flex-col gap-2 h-24 rounded-2xl bg-white/5 border border-white/5 hover:bg-primary/20">
-                <span className="text-2xl">📹</span>
+              <Button 
+                onClick={() => handleAddStory('video')} 
+                disabled={isUploading}
+                className="flex flex-col gap-2 h-24 rounded-2xl bg-white/5 border border-white/5 hover:bg-primary/20"
+              >
+                {isUploading && uploadingType === 'video' ? <Loader2 className="w-6 h-6 animate-spin" /> : <span className="text-2xl">📹</span>}
                 <span className="text-[10px] font-black uppercase">Video</span>
               </Button>
             </div>

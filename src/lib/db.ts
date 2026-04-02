@@ -99,7 +99,7 @@ export interface Message {
   groupId: string;
   senderId: string;
   text: string;
-  type?: 'text' | 'image' | 'sticker';
+  type?: 'text' | 'image' | 'sticker' | 'audio' | 'video';
   mediaUrl?: string;
   reactions?: { [emoji: string]: string[] }; // emoji -> array de uids
   createdAt: any;
@@ -501,7 +501,7 @@ export const subscribeToUserChats = (userId: string, callback: (chats: any[]) =>
   }
 };
 
-export const sendMessage = async (chatId: string, senderId: string, text: string, type: 'text'|'audio' = 'text', mediaUrl?: string) => {
+export const sendMessage = async (chatId: string, senderId: string, text: string, type: 'text'|'audio'|'image'|'sticker'|'video' = 'text', mediaUrl?: string) => {
   try {
     // 1. Añadir mensaje a la colección global
     await addDoc(collection(db, 'messages'), {
@@ -918,7 +918,7 @@ export const sendChannelMessage = async (
   groupId: string, 
   senderId: string, 
   text: string, 
-  type: 'text' | 'image' | 'sticker' = 'text',
+  type: 'text' | 'image' | 'sticker' | 'audio' | 'video' = 'text',
   mediaUrl?: string
 ) => {
   await addDoc(collection(db, 'messages'), {

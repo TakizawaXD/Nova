@@ -68,11 +68,13 @@ export function AppSidebar() {
         </div>
       </div>
 
-      <div className="hidden xl:block p-6 rounded-[2.5rem] bg-gradient-to-br from-primary/10 to-indigo-500/10 border border-white/5 backdrop-blur-3xl group overflow-hidden relative m-2">
-        <div className="absolute -right-4 -top-4 w-16 h-16 bg-primary/20 rounded-full blur-2xl transition-all" />
-        <p className="text-sm font-black text-primary uppercase mb-1 tracking-tighter">Nova Pro</p>
-        <p className="text-[11px] text-muted-foreground leading-snug mb-5">Desbloquea el futuro con funciones exclusivas de IA.</p>
-        <button className="w-full py-3 bg-primary text-white text-[11px] font-black rounded-2xl hover:brightness-110 transition-all shadow-xl shadow-primary/30 uppercase tracking-widest">Upgrade</button>
+      <div className="hidden xl:block p-6 rounded-[2.5rem] bg-gradient-to-br from-primary/10 to-indigo-500/10 border border-primary/20 backdrop-blur-3xl group overflow-hidden relative m-2 shadow-[0_0_30px_-10px_theme(colors.primary.DEFAULT)]">
+        <div className="absolute -right-4 -top-4 w-16 h-16 bg-primary/20 rounded-full blur-2xl transition-all group-hover:scale-150 duration-700" />
+        <p className="text-sm font-black text-primary uppercase mb-1 tracking-tighter flex items-center gap-2">
+            <Zap className="w-4 h-4 fill-primary animate-pulse" /> Nova Pro
+        </p>
+        <p className="text-[11px] text-muted-foreground leading-snug mb-5 font-bold italic">Desbloquea el futuro con funciones exclusivas de IA.</p>
+        <button className="w-full py-3 bg-primary text-white text-[11px] font-black rounded-2xl hover:brightness-110 transition-all shadow-xl shadow-primary/30 uppercase tracking-widest electric-glow">Upgrade</button>
       </div>
     </aside>
   );

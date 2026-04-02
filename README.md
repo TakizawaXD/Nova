@@ -1,82 +1,41 @@
-# 🪐 NovaSphere | Social Evolution Framework
+# NovaSphere | The Next-Gen Interactive Social Ecosystem 🌌
 
-![NovaSphere Banner](https://images.unsplash.com/photo-1614728263952-84ea256f9679?auto=format&fit=crop&q=80&w=2000)
+NovaSphere es una plataforma social de élite diseñada bajo principios de ergonomía móvil, interactividad cuántica en tiempo real e identidades visuales premium (Cyberpunk-Glassmorphism).
 
-**NovaSphere** is a next-generation social ecosystem designed to bridge the gap between traditional networking and the decentralized future. Built with a high-fidelity **Cyberpunk Aesthetic**, it offers a professional, immersive, and real-time experience for creators and explorers.
+No es sólo una red social; es un organismo vivo que sincroniza a los usuarios mediante flujos de datos inmediatos, encuestas atómicas integradas y arrastre inercial gobernado por motores de inteligencia artificial.
 
-> "The signal is strong. Welcome to the Nova network."
+## 🚀 Características Principales (Núcleo v22.0)
 
----
+- **Transmisión de Señales (Feed Global)**: Sincronización instantánea de publicaciones con soporte multimedia. Descubre lo que comunican los demás sin algoritmos restrictivos (visibilidad global total).
+- **Sonodeo de Opinión (Encuestas Nativas)**: Inyección directa de paneles de votación dentro de los posts con registro de exclusividad por usuario (voto atómico) en tiempo real.
+- **Destellos (Historias)**: Módulos efímeros con barra de visualización automática similar al de las redes dominantes, rediseñado para encajar en el lore cuántico de Nova.
+- **Canales Cifrados (Direct Messages)**: Chat instantáneo estilo chat-app nativa con áreas de redacción ergonómicas (multilíneas), soporte *scroll-to-bottom* dinámico y capacidades CRUD (Eliminar tus propios mensajes).
+- **Asistente Inercial (NovaAI)**: Una IA flotante y arrastrable por toda la pantalla (con *Framer Motion*) que provee asistencia técnica e información situacional sin romper el flujo de uso.
 
-## ⚡ Core Features
+## 🛠 Arquitectura Tecnológica
 
-- 🧬 **NovaAI Assistant**: Integrated intelligent node powered by state-of-the-art LLMs for navigation and context-aware assistance.
-- 🌌 **Live Feed**: A dynamic stream of "Cosmic Posts" with real-time interactions, comments, and sentiment analysis.
-- 📸 **Destellos (Stories 2.0)**: WhatsApp-style grouped stories with segmented visual ring, likes, and voting polls.
-- 🪙 **Nova Marketplace**: A fully functional store where users can list, buy, and manage digital or physical assets using Nova Credits.
-- 💬 **Quantum Chat**: Private 1-on-1 communications and community group channels with real-time encryption and safety protocols.
-- 📱 **PWA Desktop & Mobile**: Installable on any device as a standalone application with native performance.
+- **Frontend**: Next.js 14, React 18, TailwindCSS, Framer Motion, Lucide Icons.
+- **Backend & Base de Datos**: Firebase (Firestore, Auth, Storage).
+- **Estándares**: Tipografía premium corporativa (*Outfit* y *Inter*), animaciones cuánticas globales, y total adaptabilidad PWA (Progressive Web App).
 
----
+## 📦 Instalación como PWA (Mobile Ready)
 
-## 🛠 Tech Stack
+NovaSphere está codificado para ser instalado de forma nativa en tu dispositivo móvil o escritorio:
+1. Abre la plataforma en tu dispositivo móvil (Chrome/Safari).
+2. Toca el botón "**Obtener App**" desplegado en el sistema flotante o navega a las opciones de tu navegador.
+3. Instala Nova y experimenta la interfaz en modo *StandAlone* libre de los marcos del explorador.
 
-- **Frontend**: [Next.js 14](https://nextjs.org/) (App Router), [React](https://reactjs.org/), [TailwindCSS](https://tailwindcss.com/)
-- **UI Components**: [Shadcn/UI](https://ui.shadcn.com/) + [Lucide Icons](https://lucide.dev/)
-- **Backend & Database**: [Firebase](https://firebase.google.com/) (Firestore, Authentication, Storage)
-- **Aesthetics**: Custom Glassmorphism, HSL Variable Theming, Framer Motion Animations.
-- **Environment**: [Node.js](https://nodejs.org/) & [Turbopack](https://turbo.build/pack) for fast development.
+## ⚙️ Desarrollo Local
 
----
-
-## 🚀 Getting Started
-
-### 1. Requirements
-- Node.js 18+
-- A Google Firebase Project
-
-### 2. Installation
 ```bash
-git clone https://github.com/TakizawaXD/NovaSphere.git
-cd NovaSphere
+# Sincronización de dependencias
 npm install
-```
 
-### 3. Configuration
-Create a `.env.local` file with your Firebase credentials:
-```env
-NEXT_PUBLIC_FIREBASE_API_KEY=your_key
-NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your_domain
-NEXT_PUBLIC_FIREBASE_PROJECT_ID=your_id
-NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your_bucket
-NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
-NEXT_PUBLIC_FIREBASE_APP_ID=your_app_id
-```
-
-### 4. Running the Dev Server
-```bash
+# Lanzamiento del reactor de desarrollo local
 npm run dev
 ```
-Navigate to `http://localhost:3000` to enter the sphere.
+
+La plataforma estará disponible en `http://localhost:3000`.
 
 ---
-
-## 📜 Roadmap & Versions
-
-NovaSphere follows an iterative evolutionary path. Check the `CHANGELOG.md` for detailed technical updates.
-
-- **v1.0 - v15.0**: Core architecture and foundation.
-- **v18.0**: Marketplace Restoration & CRUD logic.
-- **v19.0 (Current)**: PWA Mobile Support, Grouped Stories, and Privacy Reinforcement.
-
----
-
-## ⚖️ License
-Distributed under the MIT License. See `LICENSE` for more information.
-
----
-
-## 🤝 Contact
-**TakizawaXD** - [GitHub](https://github.com/TakizawaXD)
-
-Developed with 💜 by the Nova Team.
+*Proyectado y diseñado para satisfacer la exigencia técnica más rigurosa.*

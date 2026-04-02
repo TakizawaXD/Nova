@@ -57,10 +57,38 @@
   body {
     @apply bg-background text-foreground transition-colors duration-300;
     font-feature-settings: "rlig" 1, "calt" 1;
+    font-family: 'Inter', sans-serif;
     background-image: 
-      radial-gradient(at 0% 0%, hsla(260,100%,65%,0.05) 0px, transparent 50%),
-      radial-gradient(at 100% 100%, hsla(190,100%,50%,0.05) 0px, transparent 50%);
+      radial-gradient(at 0% 0%, hsla(260,100%,65%,0.08) 0px, transparent 50%),
+      radial-gradient(at 100% 100%, hsla(190,100%,50%,0.08) 0px, transparent 50%);
   }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Outfit', sans-serif;
+    letter-spacing: -0.04em;
+    font-weight: 800;
+  }
+}
+
+.quantum-glow {
+  @apply relative;
+}
+.quantum-glow::before {
+  content: "";
+  @apply absolute inset-[-1px] bg-gradient-to-r from-primary/50 via-accent/50 to-primary/50 rounded-[inherit] -z-10 opacity-30 blur-sm;
+}
+
+.animate-quantum-pulse {
+  animation: quantum-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes quantum-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: .7; transform: scale(0.98); }
+}
+
+.skeleton-quantum {
+  @apply bg-gradient-to-r from-white/5 via-white/10 to-white/5 animate-pulse;
 }
 
 .glass {

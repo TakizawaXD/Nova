@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Bell, MessageSquare, Plus, Search, User, Sparkles, LayoutGrid, LogOut } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
@@ -28,12 +28,40 @@ export function Navbar() {
   const router = useRouter();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
+  const prevUnreadCount = useRef(0);
+
+  const playNotificationSound = () => {
+    try {
+      const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+      if (!AudioContextClass) return;
+      const ctx = new AudioContextClass();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(800, ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(1400, ctx.currentTime + 0.1);
+      gain.gain.setValueAtTime(0.01, ctx.currentTime);
+      gain.gain.linearRampToValueAtTime(0.3, ctx.currentTime + 0.05);
+      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+      osc.start(ctx.currentTime);
+      osc.stop(ctx.currentTime + 0.3);
+    } catch (e) {
+      // Audio autoplay silenciado
+    }
+  };
 
   useEffect(() => {
     if (!user) return;
     const unsub = subscribeToNotifications(user.uid, (data) => {
       setNotifications(data);
-      setUnreadCount(data.filter(n => !n.read).length);
+      const newUnreadCount = data.filter(n => !n.read).length;
+      if (newUnreadCount > prevUnreadCount.current && newUnreadCount > 0) {
+        playNotificationSound();
+      }
+      prevUnreadCount.current = newUnreadCount;
+      setUnreadCount(newUnreadCount);
     });
     return () => unsub();
   }, [user]);
@@ -83,11 +111,11 @@ export function Navbar() {
           </Button>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="rounded-2xl hover:bg-white/5 text-muted-foreground hover:text-white transition-all w-10 h-10 sm:w-12 sm:h-12 relative hidden xs:flex">
+              <Button variant="ghost" size="icon" className="rounded-2xl hover:bg-white/5 text-muted-foreground hover:text-white transition-all w-10 h-10 sm:w-12 sm:h-12 relative flex">
                 <Bell className={cn("w-5 h-5 sm:w-6 sm:h-6", unreadCount > 0 && "animate-bounce text-primary")} />
                 {unreadCount > 0 && (
-                  <span className="absolute top-2 right-2 w-4 h-4 bg-red-500 rounded-full border-2 border-[#050510] text-[8px] font-black text-white flex items-center justify-center">
-                    {unreadCount}
+                  <span className="absolute top-1 right-1 w-5 h-5 bg-red-600 rounded-full border-[2px] border-[#050510] text-[10px] font-black text-white flex items-center justify-center animate-pulse">
+                    {unreadCount > 99 ? '+99' : unreadCount}
                   </span>
                 )}
               </Button>

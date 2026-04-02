@@ -1,50 +1,23 @@
-# 🕰 NovaSphere | Changelog (Registro de Evolución)
+# Registro de Sincronización (Changelog) - NovaSphere
 
-Todas las alteraciones notables en el código de NovaSphere se documentan en este archivo.
+Todas las evoluciones notables de este ecosistema serán documentadas en este archivo.
 
----
+## [v22.0] - 2026-04-01 - Expansión de Red y Ergonomía Cuántica
 
-## [1.19.0] - "PWA & Social Evolution" - 2026-04-02
+### Añadido (Added)
+- **Motor PWA Nativo:** Implementación del componente `InstallButton` para facilitar la instalación oficial del ecosistema en dispositivos móviles directamente desde el navegador, eludiendo tiendas de apps.
+- **Sondeos Integrados (Polls):** Posibilidad de crear y emitir votos en encuestas nativas ancladas directamente en el flujo de cada post. Lógica de re-votación bloqueada por firma de Firebase.
+- **Mensajería CRUD Completa:** Implementación de visibilidad en tiempo real para todos los nodos. Adición del módulo de eliminación de mensajes (Bote de basura) únicamente para mensajes propios.
+- **Identidad Corporativa 'Destellos':** Renombramiento en toda la red de las tradicionales "Historias" por la denominación oficial de la marca: "Destellos".
+- **Asistente Inercial (NovaAI):** Integración de físicas de arrastre con `framer-motion` permitiendo posicionar al nodo de IA en zonas confortables de la pantalla táctil de cualquier dispositivo.
+- **Quantum Loader:** Transformación de todos los indicadores genéricos de carga por componentes de alta sofisticación con desenfoque gausiano y diseño en órbita.
 
-### 🛸 Progressive Web App (PWA)
-- **Instalación Nativa**: Se implementó `manifest.json` y meta-tags para permitir la instalación de NovaSphere en iOS/Android.
-- **Botón de Descarga**: Añadido componente flotante `InstallButton.tsx` con estética Cyberpunk para facilitar la adopción nativa.
-- **Identidad Visual**: El nuevo logo vectorial se ha distribuido en los directorios de iconos de la App.
+### Cambiado (Changed)
+- **Motor Tipográfico de Élite:** Migración jerárquica instalando `Outfit` para toda clase de titulares e `Inter` para cuerpos de texto, reforzando la inmersión de plataforma Premium.
+- **Sistema de Redacción Expandible:** Reemplazo de cajas de texto genéricas de 1 sola línea por áreas dinámicas expansibles vía `Textarea`, optimizando la comodidad al escribir en comunicaciones extensas. Inyección del atajo de envío inteligente `Enter` (+ multilínea con `Shift`).
+- **Visibilidad Global Desbloqueada:** Remoción de candados artificiales de red. Los usuarios ahora son capaces de observar todas las transmisiones planetarias (últimas 50) sin importar seguimientos previos. Esto impulsa la retroalimentación e interacción entre nodos inexplorados.
+- **Estabilidad de Mercado (Marketplace):** Revisión completa de las etiquetas HTML y React implicadas en el catálogo de activos, eliminando fallos en consolas de estado por variables de framer no cerradas.
 
-### 📸 Sistema de Destellos (Stories 2.0)
-- **Agrupación Inteligente**: Las historias ahora se agrupan por autor (estilo WhatsApp/Instagram), optimizando el espacio del feed.
-- **Anillo Segmentado**: El borde del avatar refleja dinámicamente la cantidad de historias activas del usuario.
-- **Navegación Táctil**: Implementada navegación de izquierda/derecha en el visor de historias con indicadores de progreso segmentados.
-
-### 🧬 Gestión de Contenido (CRUD)
-- **Borrado de Post**: Corregida lógica de autoría; ahora la eliminación de publicaciones es 100% precisa vía UID.
-- **Borrado de Comentarios**: Se añadió la capacidad de eliminar comentarios propios en los hilos de conversación.
-- **Borrado de Mensajes**: Implementada función en el núcleo de la DB para eliminar mensajes directos.
-
-### 🛡 Seguridad & Privacidad
-- **Firestore Rules Reforzadas**: Los mensajes privados ahora están blindados; solo los participantes del chat tienen autorización de lectura.
-- **Auditoría de Perfil**: Refinamiento de metadatos de usuario para asegurar la persistencia de estados y fotos.
-
-### 📝 Documentación
-- **GitHub Ready**: Creación de `README.md` profesional para la comunidad de desarrolladores y usuarios.
-
----
-
-## [1.18.0] - "Marketplace Restoration" - 2026-04-01
-
-### 🛒 Tienda Nova Credit
-- **Reconstrucción Total**: Solución de errores JSX y restauración del diseño responsivo en `marketplace/page.tsx`.
-- **Lógica Comercial**: Implementación de funciones `handlePurchase` y `handleDelete` para el inventario de productos.
-- **UX/UI**: Skeletons de carga y gradientes dinámicos en las tarjetas de productos.
-
----
-
-## [1.0.0] - [1.17.0] - "The Foundation"
-- **Desarrollo del Dashboard Principal.**
-- **Integración de NovaAI (Fase Experimental).**
-- **Sistema de Autenticación Firebase.**
-- **Navegación Móvil (Sidebar & Navbar).**
-
----
-
-> Propulsado por **Nova Sphere Engine**. Mantén el pulso de la señal.
+### Corregido (Fixed)
+- **Integridad de Carga React (Rules of Hooks):** Modificación arquitectónica de reordenamiento de ganchos (`useState`, `useEffect`, `useRef`) para solventar fatalidades o pantallas estáticas al entrar repentinamente al componente de chat móvil.
+- **Escalado de Avatares Inestable:** Ajuste automático de relaciones de aspecto de fotos usando constructores estandarizados de Tailwind.

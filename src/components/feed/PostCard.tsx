@@ -217,9 +217,9 @@ export function PostCard({ id, author, content, image, poll, timestamp, likes = 
           <p className="text-base leading-relaxed whitespace-pre-wrap text-white/90 font-medium">{content}</p>
           
           {poll && (
-            <div className="space-y-3 bg-white/5 p-6 rounded-[2rem] border border-white/5 mt-4">
-              <h4 className="text-xs font-black uppercase tracking-widest text-primary mb-4 flex items-center gap-2">
-                <Sparkles className="w-4 h-4" /> Sondeo de Opinión
+            <div className="space-y-3 bg-white/5 p-6 rounded-[2.5rem] border border-white/5 mt-4 quantum-glow shadow-[0_0_40px_-15px_theme(colors.primary.DEFAULT)]">
+              <h4 className="text-[10px] font-black uppercase tracking-[0.4em] text-primary mb-4 flex items-center gap-2 italic">
+                <Sparkles className="w-3.5 h-3.5 animate-pulse" /> Sintonía de Opinión
               </h4>
               <div className="space-y-3">
                 {poll.options.map((opt, i) => {

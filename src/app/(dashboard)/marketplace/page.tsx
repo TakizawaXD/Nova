@@ -13,6 +13,8 @@ import { useToast } from '@/hooks/use-toast';
 import Image from 'next/image';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
+import { QuantumLoader } from '@/components/ui/quantum-loader';
+import { motion, AnimatePresence } from 'framer-motion';
 
 import { 
   Dialog, 
@@ -434,25 +436,25 @@ export default function MarketplacePage() {
         {/* Rejilla de Computación (Products) */}
         <div className="flex-1 w-full">
             {loading ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-8">
-                {[1, 2, 3, 4, 5, 6].map((i) => (
-                    <div key={i} className="bg-[#050510]/40 rounded-[3rem] overflow-hidden border border-white/5 space-y-6 p-6 animate-pulse">
-                        <Skeleton className="aspect-square w-full rounded-[2rem] bg-white/5" />
-                        <div className="space-y-4">
-                            <Skeleton className="h-8 w-3/4 bg-white/5" />
-                            <Skeleton className="h-4 w-1/2 bg-white/5" />
-                            <div className="flex justify-between items-center pt-4">
-                                <Skeleton className="h-10 w-24 rounded-full bg-white/5" />
-                                <Skeleton className="h-12 w-32 rounded-2xl bg-white/5" />
-                            </div>
-                        </div>
-                    </div>
-                ))}
+                <div className="flex flex-col items-center justify-center min-h-[400px]">
+                   <QuantumLoader />
                 </div>
             ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-10">
-                {filteredItems.map((product, index) => (
-                    <Card key={product.id} className="bg-[#050510]/40 backdrop-blur-3xl border border-white/5 rounded-[2.5rem] sm:rounded-[3.5rem] overflow-hidden group hover:border-primary/40 transition-all duration-700 shadow-2xl relative flex flex-col hover:translate-y-[-8px]">
+                <AnimatePresence mode="popLayout">
+                  <motion.div 
+                    layout
+                    className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-10"
+                  >
+                  {filteredItems.map((product, index) => (
+                    <motion.div
+                      layout
+                      initial={{ opacity: 0, scale: 0.9 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.9 }}
+                      transition={{ duration: 0.4 }}
+                      key={product.id}
+                    >
+                      <Card className="bg-[#050510]/40 backdrop-blur-3xl border border-white/5 rounded-[2.5rem] sm:rounded-[3.5rem] overflow-hidden group hover:border-primary/40 transition-all duration-700 shadow-2xl relative flex flex-col hover:translate-y-[-8px] h-full">
                     
                     {/* Condición Badge Superior */}
                     <div className="absolute top-4 left-4 sm:top-6 sm:left-6 z-20">
@@ -553,11 +555,16 @@ export default function MarketplacePage() {
                         </Button>
                     </CardFooter>
                   </Card>
+                    </motion.div>
                 ))}
                 
                 {/* empty State */}
                 {filteredItems.length === 0 && (
-                    <div className="col-span-full text-center py-40 bg-[#050510]/30 backdrop-blur-3xl rounded-[4rem] border border-dashed border-white/5 shadow-inner">
+                    <motion.div 
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      className="col-span-full text-center py-40 bg-[#050510]/30 backdrop-blur-3xl rounded-[4rem] border border-dashed border-white/5 shadow-inner"
+                    >
                         <div className="flex flex-col items-center gap-8 opacity-20">
                             <div className="w-32 h-32 rounded-full border-2 border-white/10 flex items-center justify-center animate-pulse">
                                 <LayoutGrid className="w-16 h-16" />
@@ -567,9 +574,10 @@ export default function MarketplacePage() {
                                 <p className="text-sm font-medium italic">No se detectaron activos en este sector de la red Nova.</p>
                             </div>
                         </div>
-                    </div>
+                    </motion.div>
                 )}
-                </div>
+                </motion.div>
+                </AnimatePresence>
             )}
         </div>
       </div>

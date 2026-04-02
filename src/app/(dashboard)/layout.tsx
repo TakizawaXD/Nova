@@ -17,15 +17,15 @@ export default function DashboardLayout({
       <div className="fixed bottom-0 right-1/4 w-[500px] h-[500px] bg-accent/10 rounded-full blur-[120px] -z-10 pointer-events-none" />
       
       <Navbar />
+      <MobileNav />
       <div className="flex flex-1 pt-0">
         <AppSidebar />
-        <main className="flex-1 md:ml-20 xl:ml-72 p-4 md:p-8 max-w-full pb-32 md:pb-8 transition-all duration-500">
+        <main className="flex-1 md:ml-20 xl:ml-72 p-4 md:p-8 max-w-full pb-8 transition-all duration-500">
           <div className="mx-auto max-w-7xl relative">
             {children}
           </div>
         </main>
       </div>
-      <MobileNav />
       <NovaAI />
       <InstallButton />
     </div>

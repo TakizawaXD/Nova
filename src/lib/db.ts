@@ -394,10 +394,15 @@ export const votePoll = async (postId: string, optionIndex: number, userId: stri
   if (!postSnap.exists()) return;
   
   const post = postSnap.data() as Post;
-  if (!post.poll || post.poll.votedBy.includes(userId)) return;
+  if (!post.poll) return;
+  
+  const votedByArray = post.poll.votedBy || [];
+  if (votedByArray.includes(userId)) return;
   
   const newOptions = [...post.poll.options];
-  newOptions[optionIndex].votes += 1;
+  if (newOptions[optionIndex]) {
+    newOptions[optionIndex].votes = (newOptions[optionIndex].votes || 0) + 1;
+  }
   
   await updateDoc(postRef, {
     'poll.options': newOptions,
@@ -432,9 +437,18 @@ export const deleteComment = async (commentId: string, postId: string) => {
 };
 
 export const subscribeToComments = (postId: string, callback: (comments: Comment[]) => void) => {
-  const q = query(collection(db, 'comments'), where('postId', '==', postId), orderBy('createdAt', 'asc'));
+  // Evadimos Firebase Index bloqueando el orderBy cronológico y delegando el ordenamiento al nodo cliente.
+  const q = query(collection(db, 'comments'), where('postId', '==', postId));
   return onSnapshot(q, (snapshot) => {
-    callback(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Comment[]);
+    const comments = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Comment[];
+    
+    comments.sort((a, b) => {
+      const timeA = a.createdAt?.toMillis ? a.createdAt.toMillis() : 0;
+      const timeB = b.createdAt?.toMillis ? b.createdAt.toMillis() : 0;
+      return timeA - timeB;
+    });
+
+    callback(comments);
   }, (error) => {
     console.warn("Error subscribing to comments:", error);
   });
@@ -535,9 +549,19 @@ export const deleteMessage = async (messageId: string) => {
 
 export const subscribeToMessages = (chatId: string, callback: (messages: Message[]) => void) => {
   if (!chatId) return () => {};
-  const q = query(collection(db, 'messages'), where('chatId', '==', chatId), orderBy('createdAt', 'asc'));
+  // Quitamos orderBy para evadir el error de Index requerido. Ordenaremos de forma local.
+  const q = query(collection(db, 'messages'), where('chatId', '==', chatId));
   return onSnapshot(q, (snapshot) => {
-    callback(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Message[]);
+    const msgs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Message[];
+    
+    // Sort local exacto
+    msgs.sort((a, b) => {
+      const timeA = a.createdAt?.toMillis ? a.createdAt.toMillis() : 0;
+      const timeB = b.createdAt?.toMillis ? b.createdAt.toMillis() : 0;
+      return timeA - timeB;
+    });
+    
+    callback(msgs);
   }, (error) => {
     console.warn("Error subscribing to messages:", error);
   });

@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { Image as ImageIcon, MapPin, Smile, Send, Film, BarChart3, Loader2, X, PlusCircle } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
+import { Card, CardHeader, CardContent } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { useAuth } from '@/context/AuthContext';
@@ -104,27 +105,19 @@ export function CreatePost() {
   if (!user) return null;
 
   return (
-    <div className="bg-[#050510]/40 backdrop-blur-3xl border border-white/5 rounded-[2.5rem] p-5 sm:p-6 shadow-2xl relative overflow-hidden transition-all hover:border-white/10 group/post">
-      {/* Decorative gradient backglow */}
-      <div className="absolute -top-24 -right-24 w-80 h-80 bg-primary/5 rounded-full blur-[100px] -z-10 pointer-events-none" />
-      
-      <div className="flex flex-col sm:flex-row gap-4 sm:gap-6">
-        <div className="flex items-center sm:items-start gap-4">
-            <Avatar className="h-12 w-12 sm:h-14 sm:w-14 border border-white/10 shadow-2xl shrink-0">
-                <AvatarImage src={profile?.photoURL} alt={profile?.displayName} className="object-cover" />
-                <AvatarFallback className="bg-primary/10 text-primary font-black text-xl">{profile?.displayName?.charAt(0) || 'U'}</AvatarFallback>
-            </Avatar>
-            <div className="sm:hidden">
-                <p className="text-sm font-black text-white italic tracking-tighter uppercase">{profile?.displayName}</p>
-                <p className="text-[10px] text-primary font-bold uppercase tracking-widest opacity-60">Emisión en vivo • XP</p>
-            </div>
-        </div>
-
-        <div className="flex-1 flex flex-col min-h-[120px] sm:min-h-[140px] pt-1 sm:pt-2">
+    <Card className="bg-[#050510]/60 backdrop-blur-3xl border border-white/5 rounded-[2.5rem] overflow-hidden transition-all shadow-2xl relative group/create quantum-glow">
+      <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-primary via-accent to-primary opacity-0 group-hover/create:opacity-100 transition-opacity" />
+      <CardHeader className="flex flex-row items-center gap-4 px-8 pt-8 pb-4">
+        <Avatar className="h-12 w-12 border border-white/5 group-hover/create:border-primary/40 transition-colors">
+          <AvatarImage src={profile?.photoURL} className="object-cover" />
+          <AvatarFallback className="bg-primary/10 text-primary font-black uppercase">{profile?.displayName?.charAt(0)}</AvatarFallback>
+        </Avatar>
+        <div className="flex-1">
+          <p className="text-[10px] font-black uppercase tracking-[0.4em] text-primary mb-1 italic">Sintonizando el Núcleo Nova</p>
           <Textarea 
+            placeholder={`¿Qué señal emitiremos hoy, ${profile?.displayName?.split(' ')[0]}?`}
             value={content}
             onChange={(e) => setContent(e.target.value)}
-            placeholder={`¿Qué está pasando en tu mundo, ${profile?.displayName?.split(' ')[0]}?`} 
             className="bg-transparent border-none focus-visible:ring-0 text-lg sm:text-xl font-medium resize-none min-h-[80px] p-0 placeholder:text-muted-foreground/30 text-white scroll-hide leading-relaxed px-1"
           />
 
@@ -253,7 +246,7 @@ export function CreatePost() {
             </Button>
           </div>
         </div>
-      </div>
-    </div>
+      </CardHeader>
+    </Card>
   );
 }

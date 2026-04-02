@@ -212,15 +212,15 @@ export default function CommunitiesPage() {
 
   if (loading) {
     return (
-      <div className="flex h-[calc(100vh-140px)] bg-[#030303]/40 backdrop-blur-3xl border border-white/5 rounded-[3rem] overflow-hidden shadow-2xl animate-pulse">
+      <div className="flex flex-col md:flex-row h-[calc(100vh-140px)] bg-[#030303]/40 backdrop-blur-3xl border border-white/5 md:rounded-[3rem] overflow-hidden shadow-2xl animate-pulse">
         {/* Skeleton Sidebar Servidores */}
-        <div className="w-[100px] border-r border-white/5 flex flex-col items-center py-8 space-y-6">
+        <div className="w-full md:w-[100px] border-b md:border-b-0 md:border-r border-white/5 flex md:flex-col items-center py-4 md:py-8 space-x-4 md:space-x-0 md:space-y-6 overflow-hidden">
           {Array.from({ length: 5 }).map((_, i) => (
-            <Skeleton key={i} className="h-14 w-14 rounded-2xl bg-white/5" />
+            <Skeleton key={i} className="h-10 w-10 md:h-14 md:w-14 rounded-2xl bg-white/5 shrink-0" />
           ))}
         </div>
         {/* Skeleton Sidebar Canales */}
-        <div className="w-[300px] border-r border-white/5 flex flex-col p-8 space-y-8">
+        <div className="w-full md:w-[300px] border-b md:border-b-0 md:border-r border-white/5 flex flex-col p-4 md:p-8 space-y-8 hidden md:flex">
           <Skeleton className="h-8 w-40 rounded-xl bg-white/5" />
           <div className="space-y-4">
              {Array.from({ length: 4 }).map((_, i) => (
@@ -229,7 +229,7 @@ export default function CommunitiesPage() {
           </div>
         </div>
         {/* Skeleton Chat */}
-        <div className="flex-1 flex flex-col bg-white/[0.02] p-10 space-y-8">
+        <div className="flex-1 flex flex-col bg-white/[0.02] p-4 md:p-10 space-y-8">
             <Skeleton className="h-10 w-64 rounded-xl bg-white/5" />
             <div className="flex-1 flex flex-col justify-end space-y-6">
                 <Skeleton className="h-16 w-3/4 rounded-[2rem] bg-white/5" />
@@ -629,14 +629,14 @@ export default function CommunitiesPage() {
                         </div>
                         
                         {/* Micro-interaction highlight */}
-                        <div className="absolute right-8 top-8 bg-[#050510]/90 backdrop-blur-3xl px-4 py-2 rounded-2xl opacity-0 group-hover:opacity-100 transition-all flex border border-white/10 shadow-2xl scale-90 group-hover:scale-100">
+                        <div className="absolute right-4 md:right-8 top-4 md:top-8 bg-[#050510]/90 backdrop-blur-3xl px-2 md:px-4 py-2 rounded-2xl opacity-0 group-hover:opacity-100 transition-all flex border border-white/10 shadow-2xl scale-90 group-hover:scale-100">
                              <div className="flex gap-1">
                                 {['👍', '🔥', '🚀', '❤️', '😂'].map(emoji => (
                                   <Button 
                                     key={emoji} 
                                     variant="ghost" 
                                     size="icon" 
-                                    className="w-10 h-10 rounded-xl hover:bg-primary/20 hover:text-primary transition-all text-lg"
+                                    className="w-8 h-8 md:w-10 md:h-10 rounded-xl hover:bg-primary/20 hover:text-primary transition-all text-xs md:text-lg"
                                     onClick={() => handleReaction(msg.id!, emoji)}
                                   >
                                     {emoji}
@@ -652,23 +652,23 @@ export default function CommunitiesPage() {
             </ScrollArea>
 
             {/* Input de Mensaje Refinado */}
-            <div className="p-10 pt-4 shrink-0 z-20 bg-gradient-to-t from-black/60 to-transparent">
+            <div className="p-4 md:p-10 pt-2 md:pt-4 shrink-0 z-20 bg-gradient-to-t from-black/60 to-transparent">
               <div className="relative group">
                 <Input 
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
-                  placeholder={`Transmitir a #${activeChannel.name.toUpperCase()}`}
-                  className="w-full bg-[#050510]/80 backdrop-blur-3xl hover:bg-[#080815] focus-visible:bg-[#080815] border border-white/5 focus-visible:border-primary/40 h-20 rounded-[2rem] pl-16 pr-24 text-lg font-bold italic tracking-tight transition-all shadow-2xl placeholder:text-muted-foreground/30 focus-visible:ring-0"
+                  placeholder={`Mandar a #${activeChannel.name}`}
+                  className="w-full bg-[#050510]/80 backdrop-blur-3xl hover:bg-[#080815] focus-visible:bg-[#080815] border border-white/5 focus-visible:border-primary/40 h-14 md:h-20 rounded-[2rem] pl-14 md:pl-16 pr-16 md:pr-24 text-sm md:text-lg font-bold italic tracking-tight transition-all shadow-2xl placeholder:text-muted-foreground/30 focus-visible:ring-0"
                 />
-                <div className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                <div className="absolute left-2 md:left-4 top-1/2 -translate-y-1/2 flex items-center gap-1">
                      <Popover>
                         <PopoverTrigger asChild>
-                           <Button variant="ghost" size="icon" className="h-10 w-10 text-muted-foreground hover:text-primary transition-all">
-                              <Smile className="w-6 h-6" />
+                           <Button variant="ghost" size="icon" className="h-8 w-8 md:h-10 md:w-10 text-muted-foreground hover:text-primary transition-all">
+                              <Smile className="w-5 h-5 md:w-6 md:h-6" />
                            </Button>
                         </PopoverTrigger>
-                        <PopoverContent className="w-80 bg-[#050510]/95 backdrop-blur-3xl border border-white/10 rounded-3xl p-6 shadow-2xl">
+                        <PopoverContent className="w-[85vw] md:w-80 bg-[#050510]/95 backdrop-blur-3xl border border-white/10 rounded-3xl p-4 md:p-6 shadow-2xl">
                            <div className="space-y-4">
                               <p className="text-[10px] font-black uppercase tracking-widest text-primary/60">Stickers Galácticos</p>
                               <div className="grid grid-cols-3 gap-3">
@@ -683,9 +683,9 @@ export default function CommunitiesPage() {
                                    <div 
                                       key={idx} 
                                       onClick={() => handleSendMessage('', 'sticker', url)}
-                                      className="h-20 bg-white/5 rounded-2xl flex items-center justify-center cursor-pointer hover:bg-primary/20 hover:scale-110 transition-all border border-white/5"
+                                      className="h-16 md:h-20 bg-white/5 rounded-2xl flex items-center justify-center cursor-pointer hover:bg-primary/20 hover:scale-110 transition-all border border-white/5"
                                    >
-                                      <img src={url} alt="Sticker" className="w-14 h-14 object-contain" />
+                                      <img src={url} alt="Sticker" className="w-10 h-10 md:w-14 md:h-14 object-contain" />
                                    </div>
                                  ))}
                               </div>
@@ -700,18 +700,18 @@ export default function CommunitiesPage() {
                         }}
                         variant="ghost" 
                         size="icon" 
-                        className="h-10 w-10 text-muted-foreground hover:text-primary transition-all"
+                        className="hidden md:flex h-10 w-10 text-muted-foreground hover:text-primary transition-all"
                      >
                         <Image className="w-6 h-6" />
                      </Button>
                 </div>
-                <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-3">
+                <div className="absolute right-2 md:right-4 top-1/2 -translate-y-1/2 flex items-center gap-3">
                     <Button 
                         onClick={handleSendMessage}
                         disabled={!input.trim()}
-                        className="h-14 w-14 rounded-2xl bg-primary text-white shadow-xl shadow-primary/20 hover:bg-primary/80 transition-all hover:scale-105 active:scale-95"
+                        className="h-10 w-10 md:h-14 md:w-14 rounded-full md:rounded-2xl bg-primary text-white shadow-xl shadow-primary/20 hover:bg-primary/80 transition-all hover:scale-105 active:scale-95"
                     >
-                        <Send className="w-6 h-6 ml-1" />
+                        <Send className="w-4 h-4 md:w-6 md:h-6 md:ml-1" />
                     </Button>
                 </div>
               </div>

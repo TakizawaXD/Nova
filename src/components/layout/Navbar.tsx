@@ -104,7 +104,7 @@ export function Navbar() {
   return (
     <nav className="sticky top-0 z-50 w-full bg-[#050510]/80 backdrop-blur-3xl border-b border-white/5 px-6 h-20 flex items-center justify-between">
       <div className="flex items-center gap-12 flex-1">
-        <Link href="/" className="flex items-center gap-3 group">
+        <Link href="/home" className="flex items-center gap-3 group">
           <div className="w-12 h-12 bg-primary rounded-[1.25rem] flex items-center justify-center shadow-lg shadow-primary/20 transition-transform duration-500 hover:rotate-3">
             <Sparkles className="text-white w-7 h-7" />
           </div>

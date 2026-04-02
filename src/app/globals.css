@@ -87,6 +87,21 @@
   50% { opacity: .7; transform: scale(0.98); }
 }
 
+@keyframes aurora {
+  from { background-position: 50% 50%, 50% 50%; }
+  to { background-position: 350% 50%, 350% 50%; }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-20px); }
+}
+
+@keyframes reveal {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
 .skeleton-quantum {
   @apply bg-gradient-to-r from-white/5 via-white/10 to-white/5 animate-pulse;
 }
@@ -97,6 +112,27 @@
 
 .glass-primary {
   @apply bg-primary/10 backdrop-blur-xl border border-primary/20;
+}
+
+.animate-aurora {
+  @apply relative overflow-hidden;
+  background-image: 
+    radial-gradient(at 0% 0%, hsla(260,100%,65%,0.3) 0px, transparent 50%),
+    radial-gradient(at 100% 100%, hsla(190,100%,50%,0.3) 0px, transparent 50%);
+  background-size: 200% 200%;
+  animation: aurora 20s linear infinite;
+}
+
+.text-neon-glow {
+  text-shadow: 0 0 10px hsla(260,100%,65%,0.5), 0 0 20px hsla(260,100%,65%,0.3);
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+.reveal-step {
+  animation: reveal 0.8s ease-out forwards;
 }
 
 .floating-card {

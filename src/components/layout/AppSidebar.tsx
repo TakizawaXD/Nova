@@ -7,7 +7,7 @@ import { cn } from '@/lib/utils';
 import { usePathname } from 'next/navigation';
 
 const menuItems = [
-  { label: 'Inicio', icon: Home, href: '/' },
+  { label: 'Inicio', icon: Home, href: '/home' },
   { label: 'Explorar', icon: Compass, href: '/explore' },
   { label: 'Mensajes', icon: MessageCircle, href: '/messages' },
   { label: 'Destellos', icon: History, href: '/stories' },

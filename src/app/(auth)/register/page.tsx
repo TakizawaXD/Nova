@@ -90,9 +90,8 @@ export default function RegisterPage() {
       if (avatarFile) {
         try {
           photoURL = await uploadToSupabase(avatarFile, 'avatars', `${user.uid}/avatar`);
-        } catch (uploadError) {
-          console.error("Error subiendo avatar:", uploadError);
-          // Fallback a preview si el upload falla (opcional, mejor fallar si es obligatorio)
+        } catch (uploadError: any) {
+          console.error("Error subiendo avatar a Supabase:", uploadError);
           toast({ variant: 'destructive', title: 'Error de subida', description: 'No se pudo subir tu foto de perfil.' });
           setLoading(false);
           return;
@@ -124,9 +123,11 @@ export default function RegisterPage() {
       toast({ title: '¡Bienvenido a Nova!', description: 'Tu identidad fue sincronizada.' });
       router.push('/');
     } catch (error: any) {
+      console.error("🚨 [Registro] Error crítico:", error);
       let msg = error.message || 'Error inesperado.';
       if (error.code === 'auth/email-already-in-use') msg = 'Este correo ya tiene una cuenta.';
       if (error.code === 'auth/operation-not-allowed') msg = 'Registro desactivado. Actívalo en Firebase Console.';
+      if (error.code === 'permission-denied') msg = 'Permisos insuficientes en base de datos (Firestore).';
       toast({ variant: 'destructive', title: 'Error de registro', description: msg });
     } finally {
       setLoading(false);

@@ -67,7 +67,7 @@ export function StoryList() {
     
     try {
       await createStory(user.uid, profile.displayName, profile.photoURL, url, type);
-      toast({ title: "Historia publicada", description: "Tu frecuencia visual ha sido emitida." });
+      toast({ title: "Destello publicado", description: "Tu frecuencia visual ha sido emitida." });
     } catch (error) {
       toast({ variant: "destructive", title: "Error", description: "Fallo en la emisión cuántica." });
     }
@@ -133,13 +133,13 @@ export function StoryList() {
 
   return (
     <div className="flex items-center gap-6 overflow-x-auto pb-6 scroll-hide px-2 relative">
-      {/* ADD STORY SLOT */}
+      {/* ADD DESTELLO SLOT */}
       <div className="flex flex-col items-center gap-2 shrink-0 group relative">
         <Dialog>
           <DialogTrigger asChild>
             <div className="relative h-20 w-20 rounded-full border-2 border-dashed border-white/20 p-1 group-hover:border-primary transition-all duration-300 cursor-pointer">
               <Avatar className="h-full w-full bg-[#050510]">
-                <AvatarImage src={profile?.photoURL} alt="Mi historia" className="object-cover" />
+                <AvatarImage src={profile?.photoURL} alt="Destello Nova" className="object-cover" />
                 <AvatarFallback className="bg-primary/10 text-primary font-black text-xl">{profile?.displayName?.charAt(0) || 'U'}</AvatarFallback>
               </Avatar>
               <div className="absolute bottom-0 right-0 bg-primary text-white rounded-full p-1.5 border-4 border-[#030303] shadow-lg shadow-primary/20">

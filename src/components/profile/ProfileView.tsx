@@ -285,6 +285,7 @@ export function ProfileView({ targetProfile, isOwnProfile }: ProfileViewProps) {
               }}
               content={post.content}
               image={post.imageUrl}
+              poll={post.poll}
               timestamp={post.createdAt?.toDate ? post.createdAt.toDate().toLocaleString() : 'Recientemente'}
               likes={post.likes}
               comments={post.comments}

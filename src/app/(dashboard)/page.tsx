@@ -51,8 +51,11 @@ export default function Home() {
     <div className="flex flex-col lg:flex-row gap-8 lg:gap-12 max-w-[1400px] mx-auto items-start justify-center">
         {/* Main Feed Column */}
         <div className="flex-1 max-w-3xl w-full space-y-8 animate-fade-in relative z-10 transition-all duration-700">
-          <div className="space-y-2">
-             <h1 className="text-2xl font-black uppercase tracking-tighter text-white px-2">Historias <span className="text-primary">•</span></h1>
+          <div className="space-y-4">
+             <div className="flex items-center justify-between px-2">
+                <h1 className="text-2xl font-black uppercase tracking-tighter text-white">Destellos <span className="text-primary italic animate-pulse">•</span></h1>
+                <span className="text-[10px] font-black text-primary bg-primary/10 px-3 py-1 rounded-full border border-primary/20 uppercase tracking-widest">En Vivo</span>
+             </div>
              <StoryList />
           </div>
 
@@ -111,6 +114,7 @@ export default function Home() {
                   }}
                   content={post.content}
                   image={post.imageUrl}
+                  poll={post.poll}
                   timestamp={post.createdAt?.toDate ? post.createdAt.toDate().toLocaleString('es-ES', { dateStyle: 'long', timeStyle: 'short' }) : 'Recién publicado'}
                   likes={post.likes}
                   comments={post.comments}

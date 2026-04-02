@@ -344,7 +344,7 @@ export const createPost = async (postData: Omit<Post, 'id' | 'createdAt'>) => {
 };
 
 export const subscribeToPosts = (callback: (posts: Post[]) => void, onError?: (error: FirestoreError) => void) => {
-  const q = query(collection(db, 'posts'), orderBy('createdAt', 'desc'), limit(20));
+  const q = query(collection(db, 'posts'), orderBy('createdAt', 'desc'), limit(50));
   return onSnapshot(q, (snapshot) => {
     callback(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Post[]);
   }, (error) => {

@@ -658,7 +658,7 @@ export const deleteMarketItem = async (itemId: string) => {
 
 export const createStory = async (authorId: string, authorName: string, authorAvatar: string, content: string, type: 'image' | 'video' | 'text' | 'poll' | 'qna' = 'image', title?: string, pollOptions?: string[]) => {
   const now = Timestamp.now();
-  const expiresAt = new Timestamp(now.seconds + (24 * 60 * 60), now.nanoseconds);
+  const expiresAt = new Timestamp(now.seconds + (12 * 60 * 60), now.nanoseconds);
   await addDoc(collection(db, 'stories'), { 
     authorId, authorName, authorAvatar, content, type, title: title || '',
     likes: 0, likedBy: [], upvotes: 0, downvotes: 0, 

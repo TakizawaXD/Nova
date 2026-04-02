@@ -8,7 +8,7 @@ import { Card } from '@/components/ui/card';
 import { Edit2, MapPin, Link as LinkIcon, Calendar, Clock, MoreHorizontal, Filter, Loader2, Verified, PlusCircle, UserPlus, UserMinus, Mail } from 'lucide-react';
 import { PostCard } from '@/components/feed/PostCard';
 import { subscribeToPosts, Post, updateProfileData, UserProfile, subscribeToUserFollowers, subscribeToUserFollowing, checkFollowStatus, followUser, unfollowUser, startDirectChat, createNotification } from '@/lib/db';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';

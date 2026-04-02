@@ -72,6 +72,7 @@ export default function CommunitiesPage() {
   const [groupAvatarFile, setGroupAvatarFile] = useState<File | null>(null);
   const [groupAvatarPreview, setGroupAvatarPreview] = useState<string | null>(null);
   const groupAvatarInputRef = useRef<HTMLInputElement>(null);
+  const mediaInputRef = useRef<HTMLInputElement>(null);
   // Cargar Grupos
   useEffect(() => {
     if (!user) return;
@@ -139,7 +140,7 @@ export default function CommunitiesPage() {
     getAllUsers(200).then(users => setFriendsToInvite(users.filter(u => u.uid !== user.uid) || []));
   }, [user, isInviteModalOpen]);
 
-  const handleSendMessage = async (textOverride?: string, type: 'text' | 'image' | 'sticker' = 'text', mediaUrl?: string) => {
+  const handleSendMessage = async (textOverride?: string, type: 'text' | 'image' | 'sticker' | 'audio' | 'video' = 'text', mediaUrl?: string) => {
     const finalMsg = textOverride || input;
     if (!finalMsg.trim() && type === 'text') return;
     if (!activeChannel || !activeGroup || !user) return;
@@ -150,6 +151,25 @@ export default function CommunitiesPage() {
     } catch (e) {
       console.error(e);
       toast({ variant: 'destructive', title: 'Error', description: 'No se pudo enviar el mensaje.'});
+    }
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !activeChannel || !activeGroup || !user) return;
+    
+    setLoading(true);
+    try {
+        const isVideo = file.type.startsWith('video/');
+        const url = await uploadToSupabase(file, 'media', `communities/${activeGroup.id}/${Date.now()}`);
+        await handleSendMessage('', isVideo ? 'video' : 'image', url);
+        toast({ title: "Archivo Sincronizado", description: "Multimedia cargada en el canal." });
+    } catch (error) {
+        console.error("Error uploading to community:", error);
+        toast({ variant: "destructive", title: "Falla de Carga", description: "No se pudo subir el archivo multimedia." });
+    } finally {
+        setLoading(false);
+        if (mediaInputRef.current) mediaInputRef.current.value = '';
     }
   };
 
@@ -952,6 +972,10 @@ export default function CommunitiesPage() {
                                 <img src={msg.mediaUrl} alt="Media" className="w-full h-auto hover:scale-105 transition-transform duration-700" />
                                 <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover/image:opacity-100 transition-opacity" />
                             </div>
+                          ) : msg.type === 'video' ? (
+                            <div className="relative max-w-sm rounded-2xl overflow-hidden border border-white/10 shadow-2xl bg-black/40">
+                                <video src={msg.mediaUrl} controls className="w-full h-auto max-h-80" />
+                            </div>
                           ) : msg.type === 'sticker' ? (
                             <img src={msg.mediaUrl} alt="Sticker" className="w-40 h-40 object-contain drop-shadow-[0_0_15px_rgba(139,92,246,0.3)] hover:scale-110 transition-transform" />
                           ) : (
@@ -1045,11 +1069,15 @@ export default function CommunitiesPage() {
                         </PopoverContent>
                      </Popover>
                      
+                     <input 
+                        type="file" 
+                        ref={mediaInputRef} 
+                        className="hidden" 
+                        accept="image/*,video/*" 
+                        onChange={handleFileChange}
+                     />
                      <Button 
-                        onClick={() => {
-                          const url = prompt("Introduce la URL de la imagen estelar:");
-                          if (url) handleSendMessage('', 'image', url);
-                        }}
+                        onClick={() => mediaInputRef.current?.click()}
                         variant="ghost" 
                         size="icon" 
                         className="hidden md:flex h-10 w-10 text-muted-foreground hover:text-primary transition-all"

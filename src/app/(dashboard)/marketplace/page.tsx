@@ -1,8 +1,9 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Search, SlidersHorizontal, Heart, ShoppingCart, Tag, MapPin, Loader2, Plus, Sparkles, Edit, Trash2, MoreVertical, LayoutGrid, ListFilter, Star, ShieldCheck, Box, Truck, Zap, Filter } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { uploadToSupabase } from '@/lib/supabase';
+import { Search, SlidersHorizontal, Heart, ShoppingCart, Tag, MapPin, Loader2, Plus, Sparkles, Edit, Trash2, MoreVertical, LayoutGrid, ListFilter, Star, ShieldCheck, Box, Truck, Zap, Filter, Camera } from 'lucide-react';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -58,6 +59,9 @@ export default function MarketplacePage() {
   const [featuredItems, setFeaturedItems] = useState<MarketItem[]>([]);
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 10000]);
   const [selectedCondition, setSelectedCondition] = useState<string | null>(null);
+  const mediaInputRef = useRef<HTMLInputElement>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
   useEffect(() => {
     const unsubscribe = subscribeToMarketplace((data) => {
@@ -78,12 +82,18 @@ export default function MarketplacePage() {
 
     setIsSubmitting(true);
     try {
+      let finalImageUrl = formData.image;
+      
+      if (selectedFile) {
+        finalImageUrl = await uploadToSupabase(selectedFile, 'media', `marketplace/${user.uid}/${Date.now()}`);
+      }
+
       const itemData = {
         ownerId: user.uid,
         name: formData.title,
         price: formData.price.toString(),
         description: formData.description,
-        imageUrl: formData.image || '',
+        imageUrl: finalImageUrl || '',
         category: formData.category,
         location: formData.location || 'Nova Origin',
       };
@@ -98,6 +108,8 @@ export default function MarketplacePage() {
       
       setIsAdding(false);
       setEditingItemId(null);
+      setSelectedFile(null);
+      setPreviewUrl(null);
       setFormData({ title: '', price: '', description: '', category: 'Electrónica', location: '', image: '', condition: 'used', delivery: 'pickup', isFeatured: false });
     } catch (error: any) {
       toast({ variant: "destructive", title: "Falla de Sistema", description: error.message || "No se pudo sincronizar el item." });
@@ -302,9 +314,43 @@ export default function MarketplacePage() {
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 gap-4">
                     <div className="space-y-4">
-                        <label className="text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 ml-2">URL de Imagen</label>
+                        <label className="text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 ml-2">Visual del Activo (Imagen)</label>
+                        <input 
+                            type="file" 
+                            ref={mediaInputRef}
+                            className="hidden"
+                            accept="image/*"
+                            onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (file) {
+                                    setSelectedFile(file);
+                                    const reader = new FileReader();
+                                    reader.onload = (ev) => setPreviewUrl(ev.target?.result as string);
+                                    reader.readAsDataURL(file);
+                                }
+                            }}
+                        />
+                        <div 
+                            onClick={() => mediaInputRef.current?.click()}
+                            className="h-40 bg-white/5 border-2 border-dashed border-white/10 rounded-2xl flex flex-col items-center justify-center cursor-pointer hover:bg-white/10 transition-all overflow-hidden group"
+                        >
+                            {previewUrl || formData.image ? (
+                                <img src={previewUrl || formData.image} alt="Preview" className="w-full h-full object-cover" />
+                            ) : (
+                                <>
+                                    <Camera className="w-10 h-10 text-muted-foreground/40 group-hover:text-primary transition-colors mb-2" />
+                                    <span className="text-[11px] font-black uppercase tracking-widest text-muted-foreground/60">Cargar Archivo Visual</span>
+                                </>
+                            )}
+                        </div>
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-1 gap-4">
+                    <div className="space-y-4">
+                        <label className="text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 ml-2">ID de Red (URL opcional)</label>
                         <Input 
                             placeholder="https://visual.net/item.png"
                             value={formData.image}
@@ -312,6 +358,9 @@ export default function MarketplacePage() {
                             className="bg-white/5 border-white/5 rounded-2xl h-14 px-6 text-white"
                         />
                     </div>
+                </div>
+
+                <div className="grid grid-cols-1 gap-4">
                     <div className="space-y-4">
                         <label className="text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 ml-2">Método Entrega</label>
                         <Select value={formData.delivery} onValueChange={v => setFormData({...formData, delivery: v as any})}>

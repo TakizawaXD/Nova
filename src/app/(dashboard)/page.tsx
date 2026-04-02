@@ -114,6 +114,7 @@ export default function Home() {
                   }}
                   content={post.content}
                   image={post.imageUrl}
+                  videoUrl={post.videoUrl}
                   poll={post.poll}
                   timestamp={post.createdAt?.toDate ? post.createdAt.toDate().toLocaleString('es-ES', { dateStyle: 'long', timeStyle: 'short' }) : 'Recién publicado'}
                   likes={post.likes}

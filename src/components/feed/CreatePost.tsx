@@ -26,6 +26,7 @@ export function CreatePost() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [locationStr, setLocationStr] = useState('');
   const [pollOptions, setPollOptions] = useState(['', '']);
+  const [mediaType, setMediaType] = useState<'image' | 'video' | 'none'>('none');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleAddPollOption = () => {
@@ -73,7 +74,11 @@ export function CreatePost() {
       if (activeAttachment === 'media' && selectedFile) {
         try {
           const uploadedUrl = await uploadToSupabase(selectedFile, 'media', `posts/${user.uid}/${Date.now()}`);
-          postPayload.imageUrl = uploadedUrl;
+          if (mediaType === 'video') {
+            postPayload.videoUrl = uploadedUrl;
+          } else {
+            postPayload.imageUrl = uploadedUrl;
+          }
         } catch (uploadError) {
           console.error("Error uploading media:", uploadError);
           toast({ variant: 'destructive', title: 'Error de subida', description: 'No se pudo subir el archivo.' });
@@ -81,7 +86,12 @@ export function CreatePost() {
           return;
         }
       } else if (activeAttachment === 'media' && mediaUrl.trim()) {
-        postPayload.imageUrl = mediaUrl.trim();
+        // Fallback or external URL logic (naive detection)
+        if (mediaUrl.match(/\.(mp4|webm|ogg)$/i)) {
+            postPayload.videoUrl = mediaUrl.trim();
+        } else {
+            postPayload.imageUrl = mediaUrl.trim();
+        }
       }
 
       await createPost(postPayload);
@@ -116,6 +126,13 @@ export function CreatePost() {
     setSelectedFile(file);
     setActiveAttachment('media');
     
+    // Detect type
+    if (file.type.startsWith('video/')) {
+        setMediaType('video');
+    } else {
+        setMediaType('image');
+    }
+
     const reader = new FileReader();
     reader.onload = (ev) => {
       setMediaUrl(ev.target?.result as string); // Using mediaUrl for preview
@@ -187,8 +204,12 @@ export function CreatePost() {
                 )}
                 {mediaUrl && (
                   <div className="aspect-video w-full bg-white/5 rounded-xl border border-white/5 overflow-hidden">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={mediaUrl} alt="Preview" className="w-full h-full object-cover" onError={(e) => (e.currentTarget.style.display = 'none')} />
+                    {mediaType === 'video' ? (
+                       <video src={mediaUrl} className="w-full h-full object-cover" controls muted />
+                    ) : (
+                       /* eslint-disable-next-line @next/next/no-img-element */
+                       <img src={mediaUrl} alt="Preview" className="w-full h-full object-cover" onError={(e) => (e.currentTarget.style.display = 'none')} />
+                    )}
                   </div>
                 )}
               </div>

@@ -64,6 +64,7 @@ export interface Post {
   authorAvatar: string;
   content: string;
   imageUrl?: string;
+  videoUrl?: string;
   poll?: Poll; // Nuevo: Encuestas funcionales
   createdAt: any;
   likes: number;

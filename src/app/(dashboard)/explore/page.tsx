@@ -61,11 +61,21 @@ export default function ExplorePage() {
             <Card key={post.id} className="glass border-white/5 rounded-3xl overflow-hidden floating-card group cursor-pointer flex flex-col">
               <div className="relative h-48 w-full">
                 <div className="absolute inset-0 bg-gradient-to-t from-background to-transparent z-10" />
-                {post.imageUrl && (
+                {post.imageUrl && !post.videoUrl && (
                   <img 
                     src={post.imageUrl} 
                     className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" 
                     alt="Visual del post"
+                  />
+                )}
+                {post.videoUrl && (
+                  <video 
+                    src={post.videoUrl} 
+                    className="absolute inset-0 w-full h-full object-cover" 
+                    muted 
+                    autoPlay 
+                    loop 
+                    playsInline
                   />
                 )}
                 <div className="absolute top-4 left-4 z-20">

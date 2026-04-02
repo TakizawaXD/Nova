@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
+import { uploadToSupabase } from '@/lib/supabase';
 import { 
   Sparkles, 
   MessageSquare, 
@@ -18,7 +19,8 @@ import {
   Plus,
   Zap,
   ChevronRight,
-  TrendingUp
+  TrendingUp,
+  Camera
 } from 'lucide-react';
 import { 
   subscribeToActiveStories, 
@@ -71,6 +73,10 @@ export default function StoriesPage() {
   const [pollOptions, setPollOptions] = useState<string[]>(['', '']);
   const [storyType, setStoryType] = useState<'text' | 'poll' | 'qna'>('text');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const mediaInputRef = useRef<HTMLInputElement>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [mediaType, setMediaType] = useState<'image' | 'video' | 'none'>('none');
 
   useEffect(() => {
     const unsubscribe = subscribeToActiveStories((activeStories) => {
@@ -95,12 +101,22 @@ export default function StoriesPage() {
     setIsSubmitting(true);
     try {
       const options = storyType === 'poll' ? pollOptions.filter(o => o.trim() !== '') : undefined;
+      
+      let finalContent = newContent;
+      let finalType: any = storyType;
+
+      if (selectedFile) {
+        const uploadedUrl = await uploadToSupabase(selectedFile, 'media', `stories/${user.uid}/${Date.now()}`);
+        finalContent = uploadedUrl;
+        finalType = mediaType === 'video' ? 'video' : 'image';
+      }
+
       await createStory(
         user.uid, 
         profile.displayName, 
         profile.photoURL, 
-        newContent, 
-        storyType, 
+        finalContent, 
+        finalType, 
         newTitle,
         options
       );
@@ -108,6 +124,9 @@ export default function StoriesPage() {
       setNewContent('');
       setPollOptions(['', '']);
       setStoryType('text');
+      setSelectedFile(null);
+      setPreviewUrl(null);
+      setMediaType('none');
       toast({ title: 'Destello emitido', description: 'Tu frecuencia ha sido sincronizada con éxito.' });
     } catch (error) {
       toast({ variant: 'destructive', title: 'Error', description: 'Fallo al iniciar el destello.' });
@@ -161,13 +180,39 @@ export default function StoriesPage() {
                  >
                    QnA
                  </Button>
+
+                 <input 
+                    type="file" 
+                    ref={mediaInputRef}
+                    className="hidden"
+                    accept="image/*,video/*"
+                    onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                            setSelectedFile(file);
+                            setMediaType(file.type.startsWith('video/') ? 'video' : 'image');
+                            const reader = new FileReader();
+                            reader.onload = (ev) => setPreviewUrl(ev.target?.result as string);
+                            reader.readAsDataURL(file);
+                        }
+                    }}
+                 />
+                 <Button 
+                    onClick={() => mediaInputRef.current?.click()} 
+                    variant="ghost" 
+                    className="h-7 sm:h-8 rounded-full text-[9px] sm:text-[10px] font-black uppercase tracking-widest px-3 sm:px-4 text-primary hover:bg-primary/10 transition-all border border-primary/20"
+                 >
+                    <Camera className="w-3.5 h-3.5 mr-1" /> Multimedia
+                 </Button>
               </div>
+
               <Input 
                 placeholder={storyType === 'poll' ? "¿Preguntas?" : "¿Qué pasa hoy?"} 
                 value={newTitle}
                 onChange={e => setNewTitle(e.target.value)}
                 className="bg-transparent border-none text-lg sm:text-2xl font-black p-0 h-auto focus-visible:ring-0 placeholder:text-muted-foreground/30 text-white italic tracking-tighter"
               />
+
               {newTitle.length > 0 && (
                 <Textarea 
                   placeholder="Detalles..."
@@ -175,6 +220,22 @@ export default function StoriesPage() {
                   onChange={e => setNewContent(e.target.value)}
                   className="bg-white/5 border-white/5 hover:border-white/10 focus:border-orange-500/30 rounded-2xl min-h-[80px] sm:min-h-[100px] text-xs sm:text-sm font-medium italic transition-all"
                 />
+              )}
+
+              {previewUrl && (
+                  <div className="relative aspect-video rounded-2xl overflow-hidden border border-white/10 group/preview mt-2">
+                      {mediaType === 'video' ? (
+                          <video src={previewUrl} className="w-full h-full object-cover" muted autoPlay loop />
+                      ) : (
+                          <img src={previewUrl} alt="Preview" className="w-full h-full object-cover" />
+                      )}
+                      <Button 
+                          onClick={() => { setSelectedFile(null); setPreviewUrl(null); setMediaType('none'); }}
+                          variant="destructive" size="icon" className="absolute top-2 right-2 h-8 w-8 rounded-full opacity-0 group-hover:opacity-100 transition-all"
+                      >
+                          <Trash2 className="w-4 h-4" />
+                      </Button>
+                  </div>
               )}
 
               {storyType === 'poll' && (
@@ -412,9 +473,13 @@ function StoryCard({
         </div>
 
         {/* Media Block */}
-        {story.type === 'image' && story.content && story.content.startsWith('http') && (
-          <div className="rounded-[2rem] overflow-hidden border border-white/5 relative aspect-video mt-4 shadow-2xl">
-            <img src={story.content} alt="Contenido" className="w-full h-full object-cover" />
+        {(story.type === 'image' || story.type === 'video') && story.content && story.content.startsWith('http') && (
+          <div className="rounded-[2rem] overflow-hidden border border-white/5 relative aspect-video mt-4 shadow-2xl bg-black/40">
+            {story.type === 'video' ? (
+                <video src={story.content} controls className="w-full h-full object-contain" />
+            ) : (
+                <img src={story.content} alt="Contenido" className="w-full h-full object-cover" />
+            )}
           </div>
         )}
 

@@ -30,6 +30,7 @@ interface PostCardProps {
   };
   content: string;
   image?: string;
+  videoUrl?: string;
   poll?: Poll;
   timestamp: string;
   likes?: number;
@@ -39,7 +40,7 @@ interface PostCardProps {
   priority?: boolean;
 }
 
-export function PostCard({ id, author, content, image, poll, timestamp, likes = 0, comments: initialCommentsCount = 0, shares = 0, likedBy = [], priority = false }: PostCardProps) {
+export function PostCard({ id, author, content, image, videoUrl, poll, timestamp, likes = 0, comments: initialCommentsCount = 0, shares = 0, likedBy = [], priority = false }: PostCardProps) {
   const { user, profile } = useAuth();
   const { toast } = useToast();
   
@@ -252,7 +253,18 @@ export function PostCard({ id, author, content, image, poll, timestamp, likes = 
             </div>
           )}
 
-          {image && (
+          {videoUrl && (
+            <div className="relative aspect-video w-full rounded-[2rem] overflow-hidden border border-white/10 mt-4 group/video shadow-2xl bg-black/40">
+              <video 
+                src={videoUrl} 
+                controls 
+                className="w-full h-full object-contain"
+                poster={image} // Opcional: usará la imagen como poster si ambas existen
+              />
+            </div>
+          )}
+
+          {image && !videoUrl && (
             <div className="relative aspect-[16/10] w-full rounded-[2rem] overflow-hidden border border-white/10 mt-4 group/image shadow-2xl">
               <Image 
                 src={image} 

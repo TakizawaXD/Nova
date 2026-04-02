@@ -175,10 +175,17 @@ export default function MessagesPage() {
 
     setLoading(true);
     try {
+      const isVideo = file.type.startsWith('video/');
       const url = await uploadToSupabase(file, 'media', `chats/${selectedChat.id}/${Date.now()}`);
-      await sendMessage(selectedChat.id, user.uid, 'Imagen', 'image', url);
+      await sendMessage(
+        selectedChat.id, 
+        user.uid, 
+        isVideo ? 'Video' : 'Imagen', 
+        isVideo ? 'video' : 'image', 
+        url
+      );
     } catch (error) {
-      console.error("Error uploading image to chat:", error);
+      console.error("Error uploading media to chat:", error);
     } finally {
       setLoading(false);
       if (imageInputRef.current) imageInputRef.current.value = '';
@@ -547,7 +554,7 @@ export default function MessagesPage() {
                       type="file" 
                       ref={imageInputRef} 
                       className="hidden" 
-                      accept="image/*" 
+                      accept="image/*,video/*" 
                       onChange={handleImageFileChange}
                     />
                     <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full text-white hover:bg-white/10 transition-all" onClick={startRecording}><Mic className="w-5 h-5" /></Button>

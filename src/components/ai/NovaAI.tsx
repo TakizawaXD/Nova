@@ -21,6 +21,14 @@ export function NovaAI() {
   const [input, setInput] = useState('');
   const [suggestions, setSuggestions] = useState<string[]>(['Resumir feed', 'Escribir post', 'Optimizar perfil']);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const [isDisabled, setIsDisabled] = useState(false);
+
+  useEffect(() => {
+    setIsDisabled(localStorage.getItem('nova-ai-disabled') === 'true');
+    const handleStorage = () => setIsDisabled(localStorage.getItem('nova-ai-disabled') === 'true');
+    window.addEventListener('nova-settings-changed', handleStorage);
+    return () => window.removeEventListener('nova-settings-changed', handleStorage);
+  }, []);
 
   useEffect(() => {
     if (profile && messages.length === 0) {
@@ -62,6 +70,8 @@ export function NovaAI() {
       setIsTyping(false);
     }
   };
+
+  if (isDisabled) return null;
 
   return (
     <div className="fixed inset-0 pointer-events-none z-[100]">

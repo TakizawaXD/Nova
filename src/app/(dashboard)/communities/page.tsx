@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Plus, Hash, Users, Settings, Send, Loader2, ShieldAlert, ChevronLeft, Compass, Trash2, Share2, Copy, Image, Smile } from 'lucide-react';
+import { Plus, Hash, Users, Settings, Send, Loader2, ShieldAlert, ChevronLeft, Compass, Trash2, Share2, Copy, Image, Smile, UserPlus, Check, Search } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -22,9 +22,14 @@ import {
   subscribeToAllGroups,
   joinGroup,
   toggleMessageReaction,
+  getAllUsers,
+  createOrGetChat,
+  sendMessage,
+  generateUniqueInvite,
   Group, 
   Channel, 
-  Message 
+  Message,
+  UserProfile
 } from '@/lib/db';
 import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -57,7 +62,12 @@ export default function CommunitiesPage() {
   const [isCreatingChannel, setIsCreatingChannel] = useState(false);
   const [newChannelName, setNewChannelName] = useState('');
   const [newChannelType, setNewChannelType] = useState<'text' | 'voice' | 'announcement'>('text');
-
+  const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
+  const [friendsToInvite, setFriendsToInvite] = useState<UserProfile[]>([]);
+  const [invitedUsers, setInvitedUsers] = useState<Set<string>>(new Set());
+  const [inviteSearch, setInviteSearch] = useState('');
+  const [isCopied, setIsCopied] = useState(false);
+  const [uniqueInviteURL, setUniqueInviteURL] = useState(''); // Current link in input
   // Cargar Grupos
   useEffect(() => {
     if (!user) return;
@@ -112,6 +122,19 @@ export default function CommunitiesPage() {
     return () => unsubMsg();
   }, [activeChannel]);
 
+  useEffect(() => {
+    if (activeGroup && typeof window !== 'undefined') {
+       // Reset unique invite url to the master one initially
+       setUniqueInviteURL(`${window.location.origin}/nova/${activeGroup.inviteCode}`);
+    }
+  }, [activeGroup]);
+
+  // Cargar Amigos/Seguidores cuando abrimos el modal de invitar
+  useEffect(() => {
+    if (!user || !isInviteModalOpen) return;
+    getAllUsers(200).then(users => setFriendsToInvite(users.filter(u => u.uid !== user.uid) || []));
+  }, [user, isInviteModalOpen]);
+
   const handleSendMessage = async (textOverride?: string, type: 'text' | 'image' | 'sticker' = 'text', mediaUrl?: string) => {
     const finalMsg = textOverride || input;
     if (!finalMsg.trim() && type === 'text') return;
@@ -158,11 +181,39 @@ export default function CommunitiesPage() {
     }
   };
 
+  const handleGenerateLink = async () => {
+    if (!activeGroup?.id || !user) return;
+    try {
+      const code = await generateUniqueInvite(activeGroup.id, user.uid);
+      const newUrl = `${window.location.origin}/nova/${code}`;
+      setUniqueInviteURL(newUrl);
+    } catch (e) {
+      toast({ variant: 'destructive', title: 'Error', description: 'No se pudo generar un enlace.' });
+    }
+  };
+
   const handleCopyInvite = () => {
-    if (!activeGroup?.inviteCode) return;
-    const url = `${window.location.origin}/join/${activeGroup.inviteCode}`;
-    navigator.clipboard.writeText(url);
+    if (!uniqueInviteURL) return;
+    navigator.clipboard.writeText(uniqueInviteURL);
+    setIsCopied(true);
+    setTimeout(() => setIsCopied(false), 2000);
     toast({ title: 'Enlace Copiado', description: '¡Hazlo viral en la red Nova!' });
+  };
+
+  const handleSendDirectInvite = async (friendId: string) => {
+    if (!user || !activeGroup?.id) return;
+    try {
+      const uniqueCode = await generateUniqueInvite(activeGroup.id, user.uid);
+      const url = `${window.location.origin}/nova/${uniqueCode}`;
+      
+      const chatId = await createOrGetChat(user.uid, friendId);
+      await sendMessage(chatId, user.uid, `¡Únete a mi comunidad "${activeGroup.name}" en Nova!\n${url}`);
+      setInvitedUsers(prev => new Set(prev).add(friendId));
+      toast({ title: 'Invitación enviada', description: '¡El mensaje ha sido entregado!' });
+    } catch (error: any) {
+      console.error("Fallo enviando invitación:", error);
+      toast({ variant: 'destructive', title: 'Error', description: error?.message || 'No se pudo enviar la invitación.' });
+    }
   };
 
   const handleDeleteChannel = async (channelId: string) => {
@@ -363,6 +414,97 @@ export default function CommunitiesPage() {
         </DialogContent>
       </Dialog>
 
+      <Dialog open={isInviteModalOpen} onOpenChange={setIsInviteModalOpen}>
+        <DialogContent className="bg-[#050510]/95 backdrop-blur-3xl border border-white/10 rounded-[3.5rem] max-w-md p-8 shadow-2xl">
+          <DialogHeader className="mb-6">
+            <DialogTitle className="text-3xl font-black uppercase tracking-tighter text-white italic text-center">Invitar Amigos</DialogTitle>
+            <DialogDescription className="text-center text-muted-foreground/60 font-medium uppercase text-[10px] tracking-widest mt-2">{activeGroup?.name}</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-6">
+            
+            {/* Input de Busqueda */}
+            <div className="relative">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input 
+                value={inviteSearch}
+                onChange={e => setInviteSearch(e.target.value)}
+                placeholder="Buscar por nombre o pin" 
+                className="bg-white/5 border-white/10 h-12 text-sm font-medium rounded-2xl pl-12 pr-4 focus-visible:ring-primary/40 transition-all" 
+              />
+            </div>
+
+            <ScrollArea className="h-64 pr-4">
+              <div className="space-y-3">
+                 {friendsToInvite.length > 0 ? friendsToInvite.filter(f => f.displayName?.toLowerCase().includes(inviteSearch.toLowerCase()) || f.uid.includes(inviteSearch)).map(friend => {
+                   const isInvited = invitedUsers.has(friend.uid);
+                   return (
+                     <div key={friend.uid} className="flex items-center justify-between group hover:bg-white/5 p-2 rounded-2xl transition-all">
+                       <div className="flex items-center gap-3">
+                         <Avatar className="h-10 w-10 border border-white/10">
+                           <AvatarImage src={friend.photoURL} />
+                           <AvatarFallback className="bg-primary/20 text-primary font-black uppercase">{friend.displayName?.[0]}</AvatarFallback>
+                         </Avatar>
+                         <div>
+                           <p className="text-sm font-black text-white italic">{friend.displayName}</p>
+                           <p className="text-[9px] font-black uppercase tracking-widest text-primary/60">#{friend.uid.substring(0,6)}</p>
+                         </div>
+                       </div>
+                       <Button 
+                         onClick={() => !isInvited && handleSendDirectInvite(friend.uid)}
+                         disabled={isInvited}
+                         size="sm"
+                         className={cn(
+                           "h-8 px-4 rounded-xl font-black uppercase tracking-widest text-[9px] transition-all",
+                           isInvited ? "bg-white/10 text-white" : "bg-transparent border border-primary/40 text-primary hover:bg-primary hover:text-white"
+                         )}
+                       >
+                         {isInvited ? 'Enviado' : 'Invitar'}
+                       </Button>
+                     </div>
+                   );
+                 }) : (
+                   <div className="flex flex-col items-center justify-center py-10 opacity-50">
+                      <UserPlus className="w-8 h-8 mb-3" />
+                      <p className="text-[10px] font-black uppercase tracking-widest text-center">No hay amigos en tu radar<br/>Aún no has sincronizado con otras señales</p>
+                   </div>
+                 )}
+              </div>
+            </ScrollArea>
+
+            <div className="space-y-4 pt-4 border-t border-white/10">
+              <div className="flex items-center justify-between px-2">
+                 <label className="text-[10px] font-black uppercase tracking-[0.3em] text-primary/60">Enlace de acceso</label>
+                 <Button 
+                   onClick={handleGenerateLink}
+                   variant="ghost" 
+                   size="sm" 
+                   className="h-6 text-[9px] uppercase tracking-widest text-primary hover:text-white"
+                 >
+                   Generar Nuevo 🔄
+                 </Button>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Input 
+                  readOnly 
+                  value={uniqueInviteURL}
+                  className="bg-white/5 border-white/10 h-12 text-xs font-medium rounded-xl text-muted-foreground"
+                />
+                <Button 
+                  onClick={handleCopyInvite} 
+                  className={cn(
+                    "h-12 w-20 rounded-xl font-black text-xs transition-all",
+                    isCopied ? "bg-green-500 hover:bg-green-600 text-white" : "bg-primary text-white hover:bg-primary/80"
+                  )}
+                >
+                  {isCopied ? <Check className="w-5 h-5" /> : 'Copiar'}
+                </Button>
+              </div>
+              <p className="text-[9px] font-medium text-muted-foreground/60 px-2 leading-relaxed">Tu enlace de invitación no expira. Úsalo para reclutar masivamente.</p>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* 2. Columna de Canales (Terminal de Control) */}
       <div className={cn(
         "w-full md:w-[320px] bg-black/40 border-r border-white/5 flex flex-col z-20 transition-all duration-300",
@@ -388,6 +530,15 @@ export default function CommunitiesPage() {
             
             <ScrollArea className="flex-1 px-4 py-8">
               <div className="space-y-1">
+                <div className="px-4 mb-6">
+                   <Button 
+                     onClick={() => setIsInviteModalOpen(true)}
+                     className="w-full h-12 rounded-xl bg-primary text-white font-black uppercase tracking-widest text-xs shadow-xl shadow-primary/20 hover:bg-primary/80 transition-all hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-2"
+                   >
+                     <UserPlus className="w-4 h-4" /> Invitar Personas
+                   </Button>
+                </div>
+
                 <p className="text-[10px] font-black uppercase tracking-[0.3em] text-primary/60 mb-6 px-4 flex items-center justify-between">
                   <span className="flex items-center gap-3">
                     <span className="w-1.5 h-1.5 bg-primary/40 rounded-full" /> Terminales de Texto

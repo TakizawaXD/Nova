@@ -2,14 +2,17 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { Search, Send, Phone, Video, Info, Paperclip, Smile, Image as ImageIcon, Loader2, MessageSquare, Plus, ChevronLeft, Trash2 } from 'lucide-react';
+import { Search, Send, Phone, Video, Info, Paperclip, Smile, Image as ImageIcon, Loader2, MessageSquare, Plus, ChevronLeft, Trash2, Mic, Square, Play, Pause } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useAuth } from '@/context/AuthContext';
-import { sendMessage, subscribeToMessages, subscribeToUserChats, Message, getUserFriends, startDirectChat, deleteMessage, UserProfile } from '@/lib/db';
+import { sendMessage, subscribeToMessages, subscribeToUserChats, Message, getAllUsers, startDirectChat, deleteMessage, UserProfile, setTypingStatus } from '@/lib/db';
+import { storage, db } from '@/lib/firebase';
+import { uploadBytes, getDownloadURL, ref as sRef } from 'firebase/storage';
+import { addDoc, collection, serverTimestamp, updateDoc, doc } from 'firebase/firestore';
 import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
@@ -26,13 +29,21 @@ export default function MessagesPage() {
   const [friends, setFriends] = useState<UserProfile[]>([]);
   const [isNewMsgOpen, setIsNewMsgOpen] = useState(false);
   const [showMobileChat, setShowMobileChat] = useState(false);
+  
+  // Audio Recording
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordingTime, setRecordingTime] = useState(0);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Subscribe to user chats & load friends
   useEffect(() => {
     if (!user) return;
     
-    // Load friends
-    getUserFriends(user.uid).then(f => setFriends(f));
+    // Load all users for the new message dialiog
+    getAllUsers(200).then(f => setFriends(f.filter(u => u.uid !== user.uid)));
 
     const unsubscribe = subscribeToUserChats(user.uid, (data) => {
       setChats(data);
@@ -65,16 +76,76 @@ export default function MessagesPage() {
     setInput('');
     try {
       await sendMessage(selectedChat.id, user.uid, text);
+      await setTypingStatus(selectedChat.id, user.uid, false);
     } catch (error) {
       console.error("Error al enviar mensaje:", error);
     }
   };
 
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = mediaRecorder;
+      audioChunksRef.current = [];
+
+      mediaRecorder.ondataavailable = (e) => {
+        if (e.data.size > 0) audioChunksRef.current.push(e.data);
+      };
+
+      mediaRecorder.onstop = async () => {
+        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+        if (!selectedChat || !user) return;
+        setLoading(true);
+        const fileName = `audio_${Date.now()}.webm`;
+        const audioRef = sRef(storage, `chats/${selectedChat.id}/${fileName}`);
+        try {
+            await uploadBytes(audioRef, audioBlob);
+            const url = await getDownloadURL(audioRef);
+            await sendMessage(selectedChat.id, user.uid, 'Mensaje de voz', 'audio', url);
+        } catch(e) { console.error(e); }
+        setLoading(false);
+      };
+
+      mediaRecorder.start();
+      setIsRecording(true);
+      setRecordingTime(0);
+      timerRef.current = setInterval(() => setRecordingTime(t => t + 1), 1000);
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorderRef.current && isRecording) {
+      mediaRecorderRef.current.stop();
+      mediaRecorderRef.current.stream.getTracks().forEach(t => t.stop());
+      setIsRecording(false);
+      if (timerRef.current) clearInterval(timerRef.current);
+    }
+  };
+
+  const handleInput = (val: string) => {
+      setInput(val);
+      if (!selectedChat || !user) return;
+      setTypingStatus(selectedChat.id, user.uid, true);
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+      typingTimeoutRef.current = setTimeout(() => {
+          setTypingStatus(selectedChat.id, user.uid, false);
+      }, 2000);
+  };
+
   const getOtherParticipant = (chat: any) => {
-    if (!chat.participantData || !user) return { name: `Chat #${chat.id.substring(0, 4)}`, avatar: '' };
-    const otherId = Object.keys(chat.participantData).find(id => id !== user.uid);
+    if (!user || !chat.participants) return { name: `Chat Desconocido`, avatar: '' };
+    const otherId = chat.participants.find((id: string) => id !== user.uid);
     if (!otherId) return { name: 'Desconocido', avatar: '' };
-    return chat.participantData[otherId];
+    
+    // Look up real identity using the all-users list
+    const knownUser = friends.find(f => f.uid === otherId);
+    if (knownUser) return { name: knownUser.displayName, avatar: knownUser.photoURL, uid: knownUser.uid };
+
+    if (chat.participantData && chat.participantData[otherId]) return chat.participantData[otherId];
+    return { name: `Usuario #${otherId.substring(0, 4)}`, avatar: '' };
   };
 
   const handleCreateNewChat = async (friend: UserProfile) => {
@@ -158,6 +229,26 @@ export default function MessagesPage() {
              <h3 className="text-base font-semibold text-white">Mensajes</h3>
              <span className="text-sm font-medium text-muted-foreground hover:text-white cursor-pointer hover:underline">Solicitudes</span>
           </div>
+          
+          {/* Instagram Style Active Users Row */}
+          <div className="w-full pb-4 overflow-x-auto no-scrollbar">
+             <div className="flex w-max space-x-4 px-1 pb-2">
+                {friends.slice(0, 15).map(f => (
+                  <div key={f.uid} onClick={() => handleCreateNewChat(f)} className="flex flex-col items-center gap-1.5 cursor-pointer hover:scale-105 transition-transform group">
+                     <div className="relative">
+                        <div className="w-16 h-16 rounded-full bg-gradient-to-tr from-yellow-400 via-pink-500 to-purple-600 p-[2px]">
+                           <Avatar className="w-full h-full border-2 border-black">
+                              <AvatarImage src={f.photoURL} className="rounded-full object-cover" />
+                              <AvatarFallback className="bg-black text-white font-black uppercase text-xl">{f.displayName?.[0]}</AvatarFallback>
+                           </Avatar>
+                        </div>
+                        <div className="absolute bottom-0 right-0 w-4 h-4 bg-green-500 border-2 border-black rounded-full" />
+                     </div>
+                     <span className="text-[11px] font-bold text-white max-w-[64px] truncate">{f.displayName?.split(' ')[0]}</span>
+                  </div>
+                ))}
+             </div>
+          </div>
         </div>
 
         <ScrollArea className="flex-1 px-3 md:px-4 pb-8">
@@ -231,7 +322,9 @@ export default function MessagesPage() {
                 </Avatar>
                 <div className="min-w-0 flex flex-col justify-center">
                   <h3 className="text-base font-semibold text-white tracking-tight truncate leading-tight">{currentOtherUser.name}</h3>
-                  <span className="text-xs text-muted-foreground truncate leading-none mt-0.5">Activo(a) ahora</span>
+                  <div className="flex flex-col">
+                     <span className="text-xs text-muted-foreground truncate leading-none mt-0.5">Activo(a) ahora</span>
+                  </div>
                 </div>
               </div>
               <div className="flex items-center gap-4">
@@ -270,7 +363,23 @@ export default function MessagesPage() {
                           "px-4 py-2.5 text-[15px] leading-tight font-medium relative group-hover/msg:opacity-100",
                           isMe ? "bg-primary text-white rounded-[1.3rem] rounded-br-[0.3rem]" : "bg-[#262626] text-white rounded-[1.3rem] rounded-bl-[0.3rem]"
                         )}>
-                          <p className="whitespace-pre-wrap break-words">{msg.text}</p>
+                          {msg.type === 'audio' ? (
+                              <div className="flex items-center gap-3 w-48 sm:w-56">
+                                <Button size="icon" className="w-8 h-8 rounded-full bg-white/20 text-white shrink-0 hover:bg-white/30" onClick={(e) => {
+                                    const audio = e.currentTarget.nextElementSibling as HTMLAudioElement;
+                                    if(audio) audio.paused ? audio.play() : audio.pause();
+                                }}>
+                                    <Play className="w-4 h-4" />
+                                </Button>
+                                <audio src={msg.mediaUrl} className="hidden" onEnded={(e) => { /* update icon later */ }} />
+                                <div className="flex-1 h-1.5 bg-white/20 rounded-full overflow-hidden">
+                                    <div className="h-full bg-white w-1/3 rounded-full animate-pulse" />
+                                </div>
+                                <span className="text-[10px] font-bold opacity-70">Voz</span>
+                              </div>
+                          ) : (
+                              <p className="whitespace-pre-wrap break-words">{msg.text}</p>
+                          )}
                           {isMe && (
                             <button 
                               onClick={() => deleteMessage(msg.id!)}
@@ -284,6 +393,26 @@ export default function MessagesPage() {
                     </div>
                   );
                 })}
+
+                {/* Typing Indicator */}
+                {((chats.find(c => c.id === selectedChat.id)?.typing?.[currentOtherUser.uid] || 0) > Date.now() - 3000) && (
+                    <div className="flex gap-2 max-w-[75%] sm:max-w-[65%] group/msg mr-auto">
+                        <Avatar className="h-7 w-7 self-end shrink-0 hidden sm:block">
+                            <AvatarImage src={currentOtherUser.avatar} />
+                            <AvatarFallback>{currentOtherUser.name?.charAt(0)}</AvatarFallback>
+                        </Avatar>
+                        <div className="flex flex-col gap-1 relative items-start">
+                            <div className="px-4 py-2.5 text-[15px] leading-tight font-medium bg-[#262626] text-white rounded-[1.3rem] rounded-bl-[0.3rem]">
+                                <div className="flex gap-1 items-center h-4 py-1">
+                                    <div className="w-1.5 h-1.5 bg-white/60 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                                    <div className="w-1.5 h-1.5 bg-white/60 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                                    <div className="w-1.5 h-1.5 bg-white/60 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
                 <div ref={messagesEndRef} />
               </div>
             </ScrollArea>
@@ -295,10 +424,16 @@ export default function MessagesPage() {
                 </Button>
                 
                 <div className="flex-1 min-w-0 self-center items-center flex">
-                  <textarea 
-                    rows={1}
-                    value={input}
-                    onChange={(e: any) => setInput(e.target.value)}
+                  {isRecording ? (
+                      <div className="flex items-center gap-3 px-2 w-full animate-pulse text-red-500">
+                          <div className="w-2.5 h-2.5 bg-red-500 rounded-full" />
+                          <span className="font-bold text-sm tracking-widest">{Math.floor(recordingTime/60)}:{(recordingTime%60).toString().padStart(2, '0')}</span>
+                      </div>
+                  ) : (
+                      <textarea 
+                        rows={1}
+                        value={input}
+                        onChange={(e: any) => handleInput(e.target.value)}
                     onKeyDown={(e: any) => {
                       if (e.key === 'Enter' && !e.shiftKey) {
                         e.preventDefault();
@@ -308,15 +443,20 @@ export default function MessagesPage() {
                     className="bg-transparent border-none focus:outline-none min-h-[22px] max-h-[100px] py-1.5 text-[15px] font-normal text-white placeholder:text-muted-foreground/60 px-2 resize-none scroll-hide shadow-none w-full leading-tight" 
                     placeholder="Mensaje..." 
                   />
+                  )}
                 </div>
 
                 {input.trim() ? (
                   <Button onClick={handleSendMessage} variant="ghost" className="h-10 shrink-0 text-primary font-bold hover:bg-transparent hover:text-primary/80 self-end px-4 text-sm">
                     Enviar
                   </Button>
+                ) : isRecording ? (
+                  <Button onClick={stopRecording} variant="ghost" className="h-10 shrink-0 text-red-500 hover:text-red-400 font-bold hover:bg-transparent self-end px-4 text-sm gap-2">
+                    <Square className="w-4 h-4 fill-current" />
+                  </Button>
                 ) : (
                   <div className="flex gap-1 shrink-0 self-end items-center h-10">
-                    <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full text-white hover:bg-white/10 transition-all"><Paperclip className="w-5 h-5" /></Button>
+                    <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full text-white hover:bg-white/10 transition-all" onClick={startRecording}><Mic className="w-5 h-5" /></Button>
                     <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full text-white hover:bg-white/10 transition-all"><ImageIcon className="w-5 h-5" /></Button>
                   </div>
                 )}

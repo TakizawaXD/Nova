@@ -3,7 +3,6 @@ import { Navbar } from '@/components/layout/Navbar';
 import { AppSidebar } from '@/components/layout/AppSidebar';
 import { MobileNav } from '@/components/layout/MobileNav';
 import { NovaAI } from '@/components/ai/NovaAI';
-import { InstallButton } from '@/components/pwa/InstallButton';
 
 export default function DashboardLayout({
   children,
@@ -27,7 +26,6 @@ export default function DashboardLayout({
         </main>
       </div>
       <NovaAI />
-      <InstallButton />
     </div>
   );
 }

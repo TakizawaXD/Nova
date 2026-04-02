@@ -204,15 +204,15 @@ export default function MarketplacePage() {
       <div className="flex flex-col gap-6 sm:gap-8 px-4 sm:px-0">
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
           <div className="relative">
-            <h1 className="text-3xl sm:text-4xl md:text-6xl font-black tracking-tighter flex items-center gap-3 sm:gap-4 leading-none uppercase italic">
+            <h1 className="text-2xl sm:text-4xl md:text-6xl font-black tracking-tighter flex items-center gap-2 sm:gap-4 leading-none uppercase italic">
               MARKET <span className="text-primary italic">CORE</span>
-              <Zap className="w-8 h-8 sm:w-10 sm:h-10 text-primary animate-pulse shrink-0" />
+              <Zap className="w-6 h-6 sm:w-10 sm:h-10 text-primary animate-pulse shrink-0" />
             </h1>
-            <div className="flex items-center gap-2 text-muted-foreground mt-4 overflow-x-auto pb-2 scrollbar-hide">
-               <span className="text-[8px] sm:text-[10px] font-black uppercase tracking-widest bg-white/5 px-3 sm:px-4 py-2 rounded-full border border-white/5 flex items-center gap-2 whitespace-nowrap">
+            <div className="flex items-center gap-2 text-muted-foreground mt-2 sm:mt-4 overflow-x-auto pb-2 scrollbar-hide">
+               <span className="text-[8px] sm:text-[10px] font-black uppercase tracking-widest bg-white/5 px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-full border border-white/5 flex items-center gap-1.5 whitespace-nowrap">
                   <ShieldCheck className="w-3 h-3 text-primary" /> Encriptado
                </span>
-               <span className="text-[8px] sm:text-[10px] font-black uppercase tracking-widest bg-white/5 px-3 sm:px-4 py-2 rounded-full border border-white/5 flex items-center gap-2 whitespace-nowrap">
+               <span className="text-[8px] sm:text-[10px] font-black uppercase tracking-widest bg-white/5 px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-full border border-white/5 flex items-center gap-1.5 whitespace-nowrap">
                   <Box className="w-3 h-3 text-primary" /> Verificado
                </span>
             </div>
@@ -220,8 +220,8 @@ export default function MarketplacePage() {
           
           <Dialog open={isAdding} onOpenChange={setIsAdding}>
             <DialogTrigger asChild>
-              <Button className="rounded-2xl sm:rounded-[2rem] bg-primary hover:bg-primary/80 text-white gap-2 sm:gap-3 font-black uppercase tracking-widest px-6 sm:px-10 h-14 sm:h-16 shadow-2xl shadow-primary/30 transition-all hover:translate-y-[-4px] active:scale-95 text-[10px] sm:text-xs">
-                Sincronizar Item <Plus className="w-5 h-5 sm:w-6 sm:h-6" />
+              <Button className="rounded-xl sm:rounded-[2rem] bg-primary hover:bg-primary/80 text-white gap-2 sm:gap-3 font-black uppercase tracking-widest px-4 sm:px-10 h-10 sm:h-16 shadow-lg sm:shadow-2xl shadow-primary/30 transition-all hover:translate-y-[-2px] sm:hover:translate-y-[-4px] active:scale-95 text-[9px] sm:text-xs">
+                Sincronizar Item <Plus className="w-4 h-4 sm:w-6 sm:h-6" />
               </Button>
             </DialogTrigger>
             <DialogContent className="bg-[#050510]/98 backdrop-blur-3xl border border-white/10 rounded-[3.5rem] max-w-2xl p-12 shadow-2xl overflow-y-auto max-h-[90vh]">
@@ -341,33 +341,34 @@ export default function MarketplacePage() {
         </div>
 
         {/* 3. Search and Quick Filters */}
-        <div className="flex flex-col md:flex-row gap-4 items-center">
+        <div className="flex flex-col md:flex-row gap-3 sm:gap-4 items-center">
           <div className="flex-1 w-full relative group">
-            <Search className="absolute left-6 top-1/2 -translate-y-1/2 w-6 h-6 text-muted-foreground group-focus-within:text-primary transition-colors" />
+            <Search className="absolute left-4 sm:left-6 top-1/2 -translate-y-1/2 w-5 h-5 sm:w-6 sm:h-6 text-muted-foreground group-focus-within:text-primary transition-colors" />
             <Input 
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-16 h-16 md:h-20 bg-[#050510]/40 backdrop-blur-3xl border-white/5 rounded-3xl md:rounded-[2.5rem] text-lg md:text-2xl font-medium placeholder:text-muted-foreground/20 focus:bg-[#050510]/60 transition-all italic tracking-tight" 
+              className="pl-12 sm:pl-16 h-12 sm:h-16 md:h-20 bg-[#050510]/40 backdrop-blur-3xl border-white/5 rounded-2xl sm:rounded-3xl md:rounded-[2.5rem] text-sm sm:text-lg md:text-2xl font-medium placeholder:text-muted-foreground/20 focus:bg-[#050510]/60 transition-all italic tracking-tight" 
               placeholder="Escanear redes comerciales..." 
             />
           </div>
-          <div className="flex items-center gap-3 w-full md:w-auto">
+          <div className="flex items-center gap-2 sm:gap-3 w-full md:w-auto">
             <Button 
                 onClick={() => setShowMyItems(!showMyItems)}
                 variant="ghost" 
                 className={cn(
-                    "h-16 md:h-20 flex-1 md:w-auto rounded-3xl border border-white/5 gap-3 px-8 text-white font-black uppercase tracking-widest text-xs transition-all",
-                    showMyItems ? "bg-primary text-white shadow-2xl shadow-primary/20" : "bg-white/5 hover:bg-white/10"
+                    "h-12 sm:h-16 md:h-20 flex-1 md:w-auto rounded-2xl sm:rounded-3xl border border-white/5 gap-2 sm:gap-3 px-4 sm:px-8 text-white font-black uppercase tracking-widest text-[9px] sm:text-xs transition-all",
+                    showMyItems ? "bg-primary text-white shadow-lg sm:shadow-2xl shadow-primary/20" : "bg-white/5 hover:bg-white/10"
                 )}
             >
-                <ListFilter className="w-5 h-5" />
-                Mis Transacciones
+                <ListFilter className="w-4 h-4 sm:w-5 sm:h-5" />
+                <span className="hidden sm:inline">Mis Transacciones</span>
+                <span className="sm:hidden">Mis Items</span>
             </Button>
             <Select value={sortOrder} onValueChange={(v: any) => setSortOrder(v)}>
-                <SelectTrigger className="h-16 md:h-20 flex-1 md:w-56 rounded-3xl bg-white/5 border-white/5 gap-3 px-8 text-white font-black uppercase tracking-widest text-[10px]">
+                <SelectTrigger className="h-12 sm:h-16 md:h-20 flex-1 md:w-56 rounded-2xl sm:rounded-3xl bg-white/5 border-white/5 gap-2 sm:gap-3 px-4 sm:px-8 text-white font-black uppercase tracking-widest text-[9px] sm:text-[10px]">
                     <SelectValue placeholder="FILTRAR" />
                 </SelectTrigger>
-                <SelectContent className="bg-[#050510]/95 backdrop-blur-3xl border-white/10 rounded-3xl">
+                <SelectContent className="bg-[#050510]/95 backdrop-blur-3xl border-white/10 rounded-2xl sm:rounded-3xl">
                     <SelectItem value="newest" className="rounded-xl font-black uppercase text-[10px] tracking-widest py-3">Última Señal</SelectItem>
                     <SelectItem value="price-asc" className="rounded-xl font-black uppercase text-[10px] tracking-widest py-3">Precio ++</SelectItem>
                     <SelectItem value="price-desc" className="rounded-xl font-black uppercase text-[10px] tracking-widest py-3">Precio --</SelectItem>
@@ -408,7 +409,7 @@ export default function MarketplacePage() {
                 </div>
 
                 {/* Condición */}
-                <div className="space-y-4">
+                <div className="space-y-4 hidden lg:block">
                     <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground/60 px-2 pb-2 border-b border-white/5">Estado del Activo</p>
                     <div className="space-y-2">
                         {[
@@ -454,7 +455,7 @@ export default function MarketplacePage() {
                       transition={{ duration: 0.4 }}
                       key={product.id}
                     >
-                      <Card className="bg-[#050510]/40 backdrop-blur-3xl border border-white/5 rounded-[2.5rem] sm:rounded-[3.5rem] overflow-hidden group hover:border-primary/40 transition-all duration-700 shadow-2xl relative flex flex-col hover:translate-y-[-8px] h-full">
+                      <Card className="bg-[#050510]/40 backdrop-blur-3xl border border-white/5 rounded-3xl sm:rounded-[3.5rem] overflow-hidden group hover:border-primary/40 transition-all duration-700 shadow-xl sm:shadow-2xl relative flex flex-col hover:translate-y-[-4px] sm:hover:translate-y-[-8px] h-full">
                     
                     {/* Condición Badge Superior */}
                     <div className="absolute top-4 left-4 sm:top-6 sm:left-6 z-20">
@@ -517,10 +518,10 @@ export default function MarketplacePage() {
                         </div>
                     </div>
 
-                    <CardHeader className="p-6 sm:p-8 flex-1 space-y-4">
+                    <CardHeader className="p-4 sm:p-8 flex-1 space-y-2 sm:space-y-4">
                         <div className="flex items-center justify-between">
-                            <Badge className="bg-primary/10 text-primary border-none font-black text-[8px] sm:text-[9px] px-3 sm:px-4 py-1 sm:py-1.5 rounded-full tracking-widest italic">{product.category.toUpperCase()}</Badge>
-                            <div className="flex items-center gap-1.5 sm:gap-2 text-muted-foreground/40">
+                            <Badge className="bg-primary/10 text-primary border-none font-black text-[7px] sm:text-[9px] px-2 sm:px-4 py-1 sm:py-1.5 rounded-full tracking-widest italic truncate">{product.category.toUpperCase()}</Badge>
+                            <div className="flex items-center gap-1 sm:gap-2 text-muted-foreground/40 hidden sm:flex">
                                 <MapPin className="w-3 h-3" />
                                 <span className="text-[8px] sm:text-[10px] font-black uppercase tracking-widest">{product.location}</span>
                             </div>
@@ -533,23 +534,23 @@ export default function MarketplacePage() {
                         </div>
                     </CardHeader>
 
-                    <CardFooter className="p-6 sm:p-8 pt-0 mt-auto flex items-center justify-between gap-4 sm:gap-6">
+                    <CardFooter className="p-4 sm:p-8 pt-0 mt-auto flex items-center justify-between gap-2 sm:gap-6">
                         <div className="flex flex-col">
-                            <span className="text-[8px] sm:text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-0.5 sm:mb-1 opacity-40">Precio de Red</span>
-                            <span className="text-xl sm:text-3xl font-black text-white italic tracking-tighter leading-none">{product.price} <span className="text-[7px] sm:text-[8px] tracking-[0.3em] not-italic text-primary">NC</span></span>
+                            <span className="text-[7px] sm:text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-0.5 sm:mb-1 opacity-40">Precio de Red</span>
+                            <span className="text-sm sm:text-3xl font-black text-white italic tracking-tighter leading-none">{product.price} <span className="text-[6px] sm:text-[8px] tracking-[0.3em] not-italic text-primary">NC</span></span>
                         </div>
                         
                         <Button 
                             onClick={(e) => { e.stopPropagation(); handlePurchase(product); }}
                             disabled={product.status === 'sold'}
                             className={cn(
-                                "h-12 sm:h-16 px-6 sm:px-10 rounded-xl sm:rounded-2xl font-black uppercase tracking-widest text-[9px] sm:text-[11px] shadow-2xl transition-all hover:scale-[1.05] active:scale-95",
+                                "h-8 sm:h-16 px-3 sm:px-10 rounded-lg sm:rounded-2xl font-black uppercase tracking-widest text-[8px] sm:text-[11px] shadow-lg sm:shadow-2xl transition-all hover:scale-[1.05] active:scale-95",
                                 product.status === 'sold' ? "bg-white/5 text-muted-foreground border border-white/5 cursor-not-allowed" : "bg-primary text-white shadow-primary/20 hover:bg-primary/80"
                             )}
                         >
                             {product.status === 'sold' ? 'VENDIDO' : (
-                                <span className="flex items-center gap-2 sm:gap-3">
-                                    {product.price} <ShoppingCart className="w-4 h-4" />
+                                <span className="flex items-center gap-1 sm:gap-3">
+                                    Adquirir <ShoppingCart className="w-3 h-3 sm:w-4 sm:h-4" />
                                 </span>
                             )}
                         </Button>

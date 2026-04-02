@@ -115,49 +115,163 @@
   scrollbar-width: none;
 }
 
-/* --- TEMAS (ATMÓSFERAS NOVA) --- */
+/* --- 10 TEMAS CÓMODOS PARA LA VISTA (ATMÓSFERAS NOVA) --- */
 
-.theme-purple {
+.theme-solo-leveling {
+  --background: 240 20% 4%;     /* Sombra profunda */
+  --foreground: 220 20% 90%;
+  --card: 240 20% 6%;
+  --primary: 230 100% 65%;      /* Azul Eléctrico (Surgir) */
+  --accent: 270 100% 60%;
+  --ring: 230 100% 65%;
+  --border: 240 20% 12%;
+}
+
+.theme-matcha {
+  --background: 140 15% 4%;     /* Bosque oscuro */
+  --foreground: 140 20% 90%;
+  --card: 140 15% 6%;
+  --primary: 85 80% 50%;        /* Verde Matcha */
+  --accent: 140 50% 50%;
+  --ring: 85 80% 50%;
+  --border: 140 15% 12%;
+}
+
+.theme-cyberpunk {
+  --background: 320 20% 4%;     /* Magenta oscuro */
+  --foreground: 320 20% 90%;
+  --card: 320 20% 6%;
+  --primary: 330 100% 60%;      /* Rosa Neón */
+  --accent: 190 100% 50%;       /* Cyan Neón */
+  --ring: 330 100% 60%;
+  --border: 320 20% 12%;
+}
+
+.theme-crimson-moon {
+  --background: 0 15% 4%;       /* Rojo noche */
+  --foreground: 0 20% 90%;
+  --card: 0 15% 6%;
+  --primary: 345 80% 50%;       /* Rojo Sangre */
+  --accent: 0 60% 50%;
+  --ring: 345 80% 50%;
+  --border: 0 15% 12%;
+}
+
+.theme-ocean {
+  --background: 200 30% 4%;     /* Azul abisal */
+  --foreground: 200 20% 90%;
+  --card: 200 30% 6%;
+  --primary: 195 100% 45%;      /* Cyan Pacífico */
+  --accent: 210 100% 60%;
+  --ring: 195 100% 45%;
+  --border: 200 30% 12%;
+}
+
+.theme-golden-sun {
+  --background: 35 15% 4%;      /* Ámbar oscuro */
+  --foreground: 35 20% 90%;
+  --card: 35 15% 6%;
+  --primary: 35 100% 55%;       /* Sol Dorado */
+  --accent: 20 100% 60%;
+  --ring: 35 100% 55%;
+  --border: 35 15% 12%;
+}
+
+.theme-monochrome {
+  --background: 0 0% 0%;        /* AMOLED Puro */
+  --foreground: 0 0% 90%;
+  --card: 0 0% 3%;
+  --primary: 0 0% 80%;          /* Plata / Zinc */
+  --accent: 0 0% 50%;
+  --ring: 0 0% 80%;
+  --border: 0 0% 12%;
+}
+
+.theme-dracula {
+  --background: 260 20% 6%;     /* Drácula */
+  --foreground: 260 20% 90%;
+  --card: 260 20% 8%;
+  --primary: 280 80% 60%;       /* Morado Oscuro */
+  --accent: 150 60% 50%;        /* Verde cian */
+  --ring: 280 80% 60%;
+  --border: 260 20% 15%;
+}
+
+.theme-nord {
+  --background: 220 20% 10%;    /* Noche Polar */
+  --foreground: 220 20% 90%;
+  --card: 220 20% 13%;
+  --primary: 210 60% 65%;       /* Hielo / Frost */
+  --accent: 190 60% 60%;
+  --ring: 210 60% 65%;
+  --border: 220 20% 18%;
+}
+
+.theme-nova-core {
+  --background: 240 10% 2.5%;   /* NovaSphere Base */
+  --foreground: 240 10% 95%;
+  --card: 240 10% 5%;
   --primary: 260 100% 65%;
   --accent: 190 100% 50%;
   --ring: 260 100% 65%;
+  --border: 240 10% 12%;
 }
 
-.theme-emerald {
-  --primary: 155 100% 50%;
-  --accent: 180 100% 50%;
-  --ring: 155 100% 50%;
+.theme-abyss {
+  --background: 240 100% 2%;    /* Fosa de las Marianas */
+  --foreground: 240 20% 90%;
+  --card: 240 100% 4%;
+  --primary: 220 100% 55%;      /* Azul Abisal */
+  --accent: 280 100% 60%;
+  --ring: 220 100% 55%;
+  --border: 240 100% 10%;
 }
 
-.theme-amber {
-  --primary: 35 100% 55%;
-  --accent: 50 100% 50%;
-  --ring: 35 100% 55%;
+/* TEMA BLANCO / LUZ SOLAR (Hack para colores hardcodeados) */
+.theme-light {
+  --background: 0 0% 98%;
+  --foreground: 0 0% 10%;
+  --card: 0 0% 100%;
+  --primary: 260 100% 65%;
+  --accent: 190 100% 50%;
+  --ring: 260 100% 65%;
+  --border: 0 0% 85%;
 }
 
-.theme-rose {
-  --primary: 335 100% 65%;
-  --accent: 300 100% 60%;
-  --ring: 335 100% 65%;
+.theme-light body {
+  background-image: 
+    radial-gradient(at 0% 0%, hsla(260,100%,65%,0.08) 0px, transparent 50%),
+    radial-gradient(at 100% 100%, hsla(190,100%,50%,0.08) 0px, transparent 50%);
 }
 
-.theme-cyan {
-  --primary: 185 100% 50%;
-  --accent: 210 100% 60%;
-  --ring: 185 100% 50%;
+.theme-light .bg-black,
+.theme-light .bg-\[\#0a0a0a\],
+.theme-light .bg-\[\#050510\],
+.theme-light .bg-\[\#030303\],
+.theme-light .bg-\[\#040404\],
+.theme-light .bg-background {
+  background-color: #fafafa !important;
 }
 
-.theme-indigo {
-  --primary: 225 100% 65%;
-  --accent: 260 100% 70%;
-  --ring: 225 100% 65%;
+.theme-light .bg-\[\#050510\]\/80 { background-color: rgba(250,250,250,0.8) !important; }
+.theme-light .bg-\[\#050510\]\/95 { background-color: rgba(250,250,250,0.95) !important; }
+.theme-light .bg-\[\#030303\]\/40 { background-color: rgba(250,250,250,0.4) !important; }
+
+.theme-light .text-white { color: #111111 !important; }
+.theme-light .text-muted-foreground { color: #6b7280 !important; }
+
+.theme-light .border-white\/5,
+.theme-light .border-white\/10,
+.theme-light .border-white\/20 {
+  border-color: rgba(0, 0, 0, 0.08) !important;
 }
 
-.theme-slate {
-  --primary: 215 25% 75%;
-  --accent: 200 100% 50%;
-  --ring: 215 25% 75%;
-}
+.theme-light .bg-white\/5 { background-color: rgba(0, 0, 0, 0.03) !important; }
+.theme-light .bg-white\/10 { background-color: rgba(0, 0, 0, 0.06) !important; }
+.theme-light .bg-white\/20 { background-color: rgba(0, 0, 0, 0.1) !important; }
+.theme-light .hover\:bg-white\/5:hover { background-color: rgba(0, 0, 0, 0.05) !important; }
+.theme-light .hover\:bg-white\/10:hover { background-color: rgba(0, 0, 0, 0.08) !important; }
+.theme-light .hover\:text-white:hover { color: #000000 !important; }
 
 @keyframes float {
   0% { transform: translateY(0px); }

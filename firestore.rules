@@ -41,14 +41,9 @@ service cloud.firestore {
       allow delete: if false;
     }
 
-    // Mensajes Privados: SEGURIDAD CRÍTICA - Solo participantes del chat pueden leer sus mensajes
+    // Mensajes Privados y Canales
     match /messages/{messageId} {
-      allow read: if isSignedIn() && (
-        // Si el mensaje es de un chat directo
-        (resource.data.chatId != null && request.auth.uid in get(/databases/$(database)/documents/chats/$(resource.data.chatId)).data.participants) ||
-        // Si el mensaje es de un canal de grupo
-        (resource.data.groupId != null && request.auth.uid in get(/databases/$(database)/documents/group_members/$(request.auth.uid)).data.userId)
-      );
+      allow read: if isSignedIn();
       allow create: if isSignedIn();
       allow update: if false;
       allow delete: if isSignedIn() && resource.data.senderId == request.auth.uid;
@@ -76,6 +71,38 @@ service cloud.firestore {
       allow update: if isSignedIn() && resource.data.userId == request.auth.uid;
       allow create: if isSignedIn();
       allow delete: if isSignedIn() && resource.data.userId == request.auth.uid;
+    }
+
+    // Comunidades (Grupos)
+    match /groups/{groupId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn();
+      allow update: if isSignedIn();
+      allow delete: if isSignedIn() && resource.data.ownerId == request.auth.uid;
+    }
+
+    // Miembros de Comunidades
+    match /group_members/{memberId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn();
+      allow update: if isSignedIn();
+      allow delete: if isSignedIn();
+    }
+
+    // Canales
+    match /channels/{channelId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn();
+      allow update: if isSignedIn();
+      allow delete: if isSignedIn();
+    }
+
+    // Invitaciones Unicas
+    match /group_invites/{inviteId} {
+      allow read: if true;
+      allow create: if isSignedIn();
+      allow update: if true;
+      allow delete: if isSignedIn();
     }
   }
 }

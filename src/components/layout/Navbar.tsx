@@ -19,19 +19,20 @@ import {
   DropdownMenuSeparator, 
   DropdownMenuTrigger 
 } from '@/components/ui/dropdown-menu';
-import { subscribeToNotifications, markNotificationAsRead, Notification } from '@/lib/db';
+import { subscribeToNotifications, markNotificationAsRead, type Notification as AppNotification } from '@/lib/db';
 import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
 
 export function Navbar() {
   const { profile, user } = useAuth();
   const router = useRouter();
-  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const prevUnreadCount = useRef(0);
 
   const playNotificationSound = () => {
     try {
+      if (typeof window !== 'undefined' && !(window as any)._novaUserInteracted) return;
       const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
       if (!AudioContextClass) return;
       const ctx = new AudioContextClass();
@@ -53,20 +54,40 @@ export function Navbar() {
   };
 
   useEffect(() => {
+    if ('Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission();
+    }
+    const markInteracted = () => { (window as any)._novaUserInteracted = true; };
+    window.addEventListener('click', markInteracted, { once: true });
+    window.addEventListener('keydown', markInteracted, { once: true });
+    window.addEventListener('touchstart', markInteracted, { once: true });
+
     if (!user) return;
     const unsub = subscribeToNotifications(user.uid, (data) => {
       setNotifications(data);
       const newUnreadCount = data.filter(n => !n.read).length;
       if (newUnreadCount > prevUnreadCount.current && newUnreadCount > 0) {
         playNotificationSound();
+        if ('Notification' in window && Notification.permission === 'granted') {
+          const latest = data.filter(n => !n.read)[0];
+          new window.Notification('NovaSphere', { 
+            body: latest?.content || 'Tienes nuevas alertas en la red.',
+            icon: '/icons/icon-192x192.png'
+          });
+        }
       }
       prevUnreadCount.current = newUnreadCount;
       setUnreadCount(newUnreadCount);
     });
-    return () => unsub();
+    return () => {
+        unsub();
+        window.removeEventListener('click', markInteracted);
+        window.removeEventListener('keydown', markInteracted);
+        window.removeEventListener('touchstart', markInteracted);
+    };
   }, [user]);
 
-  const handleNotificationClick = async (n: Notification) => {
+  const handleNotificationClick = async (n: AppNotification) => {
     await markNotificationAsRead(n.id!);
     router.push(n.link);
   };
@@ -184,30 +205,41 @@ export function Navbar() {
             <DropdownMenuLabel className="font-black uppercase tracking-widest text-[11px] text-muted-foreground px-4 py-3 pb-1">Núcleo NovaSphere</DropdownMenuLabel>
             
             <div className="px-4 mb-4 mt-2">
-              <p className="text-[9px] font-black uppercase tracking-widest text-primary mb-2 opacity-60">Sintonía de Frecuencia</p>
-              <div className="grid grid-cols-7 gap-1.5">
+              <p className="text-[9px] font-black uppercase tracking-widest text-primary mb-3 opacity-60">Sintonía de Frecuencia</p>
+              <div className="grid grid-cols-6 gap-2 sm:gap-3">
                 {[
-                  { name: 'purple', color: 'bg-[#8B5CF6]' },
-                  { name: 'emerald', color: 'bg-green-500' },
-                  { name: 'amber', color: 'bg-amber-500' },
-                  { name: 'rose', color: 'bg-rose-500' },
-                  { name: 'cyan', color: 'bg-cyan-500' },
-                  { name: 'indigo', color: 'bg-indigo-500' },
-                  { name: 'slate', color: 'bg-slate-500' }
+                  { name: 'light', label: 'Blanco / Día', color: 'bg-[#fafafa]' },
+                  { name: 'nova-core', label: 'NovaCore', color: 'bg-[#8B5CF6]' },
+                  { name: 'solo-leveling', label: 'Solo Leveling', color: 'bg-[#4F46E5]' },
+                  { name: 'cyberpunk', label: 'Cyberpunk', color: 'bg-[#EC4899]' },
+                  { name: 'matcha', label: 'Matcha', color: 'bg-[#84CC16]' },
+                  { name: 'crimson-moon', label: 'Crimson', color: 'bg-[#E11D48]' },
+                  { name: 'ocean', label: 'Océano', color: 'bg-[#06B6D4]' },
+                  { name: 'golden-sun', label: 'Golden Sun', color: 'bg-[#F59E0B]' },
+                  { name: 'dracula', label: 'Drácula', color: 'bg-[#A855F7]' },
+                  { name: 'nord', label: 'Nord', color: 'bg-[#818CF8]' },
+                  { name: 'monochrome', label: 'Monochrome', color: 'bg-[#555555]' },
+                  { name: 'abyss', label: 'Abismo', color: 'bg-[#050510]' }
                 ].map((th) => (
                   <button
                     key={th.name}
                     onClick={() => {
                         const root = document.getElementsByTagName('html')[0];
-                        root.className = 'dark theme-' + th.name;
+                        if (th.name === 'light') {
+                          root.className = 'theme-light';
+                        } else {
+                          root.className = 'dark theme-' + th.name;
+                        }
                         localStorage.setItem('nova-theme', th.name);
                     }}
                     className={cn(
-                        "w-6 h-6 rounded-lg transition-all hover:scale-125 border border-white/10 active:scale-95",
+                        "w-7 h-7 sm:w-8 sm:h-8 rounded-full transition-all hover:scale-125 active:scale-95 border border-white/20 shadow-lg relative group",
                         th.color
                     )}
-                    title={`Modo ${th.name.toUpperCase()}`}
-                  />
+                    title={th.label}
+                  >
+                    <div className="absolute inset-0 rounded-full bg-black/20 group-hover:bg-transparent transition-colors" />
+                  </button>
                 ))}
               </div>
             </div>

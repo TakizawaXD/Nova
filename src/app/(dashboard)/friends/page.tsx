@@ -7,11 +7,13 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
-import { searchUserByPin, followUser, getUserFriends, UserProfile, startDirectChat, getDiscoverUsers } from '@/lib/db';
+import { searchUserByPin, followUser, getAllUsers, getUserFriends, checkFollowStatus, UserProfile, startDirectChat, getDiscoverUsers } from '@/lib/db';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
+import { cn } from '@/lib/utils';
 
 export default function FriendsPage() {
   const { profile, user } = useAuth();
@@ -19,7 +21,9 @@ export default function FriendsPage() {
   const router = useRouter();
   
   const [searchQuery, setSearchQuery] = useState('');
+  const [activeTab, setActiveTab] = useState<'explore' | 'following'>('explore');
   const [friends, setFriends] = useState<UserProfile[]>([]);
+  const [followingUsers, setFollowingUsers] = useState<UserProfile[]>([]);
   const [discoverUsers, setDiscoverUsers] = useState<UserProfile[]>([]);
   const [loading, setLoading] = useState(true);
   
@@ -29,7 +33,7 @@ export default function FriendsPage() {
 
   useEffect(() => {
     if (user) {
-      loadFriends();
+      loadNetwork();
       getDiscoverUsers(4).then((users: UserProfile[]) => setDiscoverUsers(users.filter((u: UserProfile) => u.uid !== user.uid)));
     }
   }, [user]);
@@ -46,12 +50,15 @@ export default function FriendsPage() {
     return () => clearTimeout(timer);
   }, [searchQuery]);
 
-  const loadFriends = async () => {
+  const loadNetwork = async () => {
     if (!user) return;
     try {
       setLoading(true);
-      const data = await getUserFriends(user.uid);
-      setFriends(data);
+      const allData = await getAllUsers(200);
+      setFriends(allData.filter(u => u.uid !== user.uid));
+      
+      const followData = await getUserFriends(user.uid);
+      setFollowingUsers(followData);
     } catch (e) {
       console.error(e);
     } finally {
@@ -82,10 +89,10 @@ export default function FriendsPage() {
     setAdding(true);
     try {
       await followUser(user.uid, targetId);
-      toast({ title: 'Vínculo creado', description: 'Has añadido este explorador a tu constelación.' });
+      toast({ title: 'Vínculo creado', description: 'Has añadido este nodo a tu constelación.' });
       setFoundUser(null);
       setSearchQuery('');
-      loadFriends(); // refetch
+      loadNetwork(); // refetch
     } catch (error) {
       toast({ variant: 'destructive', title: 'Error', description: 'No se pudo crear el vínculo.' });
     } finally {
@@ -179,88 +186,114 @@ export default function FriendsPage() {
       </Card>
 
       {/* Friends List Section */}
-      <div className="px-6 space-y-6">
-        <div className="flex items-center justify-between border-l-4 border-primary pl-6 py-2">
-           <h2 className="text-2xl font-black text-white uppercase tracking-tighter italic">Nodos de Constelación</h2>
-           <div className="flex gap-2">
-              <Button variant="ghost" className="rounded-xl bg-white/5 hover:bg-white/10 text-white font-black uppercase tracking-widest text-[9px] h-10 px-4">Recientes</Button>
-              <Button variant="ghost" className="rounded-xl bg-white/5 hover:bg-white/10 text-white font-black uppercase tracking-widest text-[9px] h-10 px-4">Alfabético</Button>
-           </div>
-        </div>
+      <Tabs defaultValue="explore" onValueChange={(v) => setActiveTab(v as any)} className="px-6 space-y-6 w-full">
+        <TabsList className="w-full h-14 sm:h-16 bg-[#050510]/40 backdrop-blur-xl border border-white/5 rounded-[2rem] p-1 flex">
+            <TabsTrigger value="explore" className="flex-1 rounded-[1.5rem] font-black uppercase text-[9px] sm:text-[11px] tracking-widest data-[state=active]:bg-primary data-[state=active]:text-white transition-all shadow-none">Explorar Ecosistema</TabsTrigger>
+            <TabsTrigger value="following" className="flex-1 rounded-[1.5rem] font-black uppercase text-[9px] sm:text-[11px] tracking-widest data-[state=active]:bg-primary data-[state=active]:text-white transition-all shadow-none flex items-center gap-2">Mis Nodos <Badge className="bg-white/20 text-white rounded-full py-0 border-none text-[8px] h-4 leading-none hidden sm:flex">{followingUsers.length}</Badge></TabsTrigger>
+        </TabsList>
 
+        <TabsContent value="explore" className="mt-6">
         {loading ? (
           <div className="flex flex-col items-center justify-center py-32 space-y-4">
             <Loader2 className="w-12 h-12 text-primary animate-spin" />
-            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground">Analizando topología de red...</p>
+            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground">Analizando topología...</p>
           </div>
         ) : filteredFriends.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
             {filteredFriends.map((friend) => (
-              <Card key={friend.uid} className="bg-[#050510]/40 backdrop-blur-3xl border border-white/5 rounded-[2.5rem] overflow-hidden group hover:border-primary/30 transition-all duration-500 shadow-2xl relative">
-                <div className="p-8 flex items-center justify-between">
-                  <Link href={`/profile/${friend.uid}`} className="flex items-center gap-6 cursor-pointer flex-1">
-                    <div className="relative group-hover:scale-110 transition-transform duration-500">
-                      <Avatar className="w-20 h-20 border-2 border-white/5 group-hover:border-primary/50 transition-colors shadow-2xl">
+              <Card key={friend.uid} className="bg-[#050510]/40 backdrop-blur-3xl border border-white/5 rounded-[2rem] overflow-hidden group hover:border-primary/30 transition-all duration-500 shadow-xl relative">
+                <div className="p-4 sm:p-6 flex items-center justify-between">
+                  <Link href={`/profile/${friend.uid}`} className="flex items-center gap-4 cursor-pointer flex-1 min-w-0">
+                    <div className="relative group-hover:scale-110 transition-transform duration-500 shrink-0">
+                      <Avatar className="w-12 h-12 sm:w-16 sm:h-16 border-2 border-white/5 group-hover:border-primary/50 transition-colors shadow-2xl">
                         <AvatarImage src={friend.photoURL} alt={friend.displayName} className="object-cover" />
-                        <AvatarFallback className="bg-primary/10 text-primary font-black text-2xl">{friend.displayName[0]}</AvatarFallback>
+                        <AvatarFallback className="bg-primary/10 text-primary font-black text-xl">{friend.displayName[0]}</AvatarFallback>
                       </Avatar>
-                      <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-[#030303] rounded-full flex items-center justify-center border border-white/5 group-hover:border-primary/30 transition-colors">
-                         <div className="w-3 h-3 bg-green-500 rounded-full shadow-[0_0_8px_theme(colors.green.500)]" />
+                      <div className="absolute -bottom-1 -right-1 w-4 h-4 sm:w-5 sm:h-5 bg-[#030303] rounded-full flex items-center justify-center border border-white/5">
+                         <div className="w-2 h-2 bg-green-500 rounded-full shadow-[0_0_8px_theme(colors.green.500)]" />
                       </div>
                     </div>
-                    <div className="space-y-1">
-                      <h3 className="text-2xl font-black text-white italic tracking-tighter group-hover:text-primary transition-colors">{friend.displayName}</h3>
-                      <div className="flex items-center gap-3">
-                        <span className="text-[10px] text-muted-foreground font-black uppercase tracking-widest">@{friend.username}</span>
-                        {friend.isVerified && <Verified className="w-3.5 h-3.5 text-primary opacity-60" />}
+                    <div className="space-y-0.5 truncate">
+                      <h3 className="text-sm sm:text-lg font-black text-white italic tracking-tighter group-hover:text-primary transition-colors truncate">{friend.displayName}</h3>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[9px] text-muted-foreground font-black uppercase tracking-widest truncate">@{friend.username}</span>
+                        {friend.isVerified && <Verified className="w-3 h-3 text-primary shrink-0 opacity-60" />}
                       </div>
                     </div>
                   </Link>
-                  <Button onClick={() => handleStartChat(friend)} variant="ghost" size="icon" className="w-14 h-14 rounded-2xl bg-white/5 hover:bg-primary text-white border border-white/10 hover:border-primary transition-all shadow-xl hover:shadow-primary/30 ml-4">
-                    <Mail className="w-6 h-6" />
+                  <Button 
+                    onClick={() => {
+                        if (followingUsers.find(u => u.uid === friend.uid)) {
+                            handleStartChat(friend);
+                        } else {
+                            handleAddFriend(friend.uid);
+                        }
+                    }}
+                    variant={followingUsers.find(u => u.uid === friend.uid) ? "ghost" : "default"} 
+                    size="icon" 
+                    className={cn("w-10 h-10 sm:w-12 sm:h-12 rounded-xl transition-all ml-2", followingUsers.find(u => u.uid === friend.uid) ? "hover:bg-primary text-primary" : "bg-primary text-white shadow-xl shadow-primary/30")}
+                  >
+                    {loading || adding ? <Loader2 className="w-4 h-4 animate-spin" /> : followingUsers.find(u => u.uid === friend.uid) ? <Mail className="w-4 h-4 sm:w-5 sm:h-5" /> : <UserPlus className="w-4 h-4 sm:w-5 sm:h-5" />}
                   </Button>
                 </div>
-                <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
               </Card>
             ))}
           </div>
         ) : friends.length > 0 ? (
-           <div className="text-center py-32 opacity-40">
-              <Search className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
-              <p className="text-sm font-black uppercase tracking-widest">No se detectan nodos en el filtro actual</p>
+           <div className="text-center py-20 opacity-40">
+              <Search className="w-10 h-10 mx-auto mb-4 text-muted-foreground" />
+              <p className="text-xs font-black uppercase tracking-widest">No se detectan nodos estelares</p>
            </div>
         ) : (
-          <div className="text-center py-40 bg-[#050510]/20 rounded-[4rem] border border-dashed border-white/5 mx-auto px-10">
-            <div className="w-24 h-24 bg-primary/10 rounded-[2rem] mx-auto flex items-center justify-center animate-bounce-slow mb-8 border border-primary/20">
-               <Sparkles className="w-12 h-12 text-primary opacity-60" />
-            </div>
-            <h2 className="text-3xl font-black text-white uppercase tracking-tighter italic">Tu Constelación Está Deshabitada</h2>
-            <p className="text-muted-foreground font-medium text-lg mt-4 max-w-sm mx-auto mb-12">Inicia la expansión de tu red sincronizando con otros exploradores o descubre nuevos ciudadanos.</p>
-            
-            {discoverUsers.length > 0 && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-left">
-                    {discoverUsers.map(u => (
-                        <div key={u.uid} className="flex items-center justify-between p-4 bg-white/5 rounded-2xl border border-white/5 hover:border-primary/30 transition-all group">
-                            <div className="flex items-center gap-3">
-                                <Avatar className="h-10 w-10 border border-white/10">
-                                    <AvatarImage src={u.photoURL} />
-                                    <AvatarFallback>{u.displayName[0]}</AvatarFallback>
-                                </Avatar>
-                                <div>
-                                    <p className="text-sm font-black text-white italic">@{u.username}</p>
-                                    <p className="text-[10px] text-muted-foreground uppercase">{u.displayName}</p>
-                                </div>
-                            </div>
-                            <Button onClick={() => handleAddFriend(u.uid)} size="sm" variant="ghost" className="h-8 w-8 rounded-lg bg-primary/10 text-primary hover:bg-primary hover:text-white transition-all">
-                                <UserPlus className="w-4 h-4" />
-                            </Button>
-                        </div>
-                    ))}
-                </div>
-            )}
+          <div className="text-center py-20 bg-[#050510]/20 rounded-[3rem] sm:rounded-[4rem] border border-dashed border-white/5 mx-auto px-4 sm:px-10">
+            <h2 className="text-2xl font-black text-white uppercase tracking-tighter italic">Tu Constelación Está Deshabitada</h2>
           </div>
         )}
-      </div>
+        </TabsContent>
+
+        <TabsContent value="following" className="mt-6">
+        {loading ? (
+          <div className="flex flex-col items-center justify-center py-32 space-y-4">
+            <Loader2 className="w-12 h-12 text-primary animate-spin" />
+            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground">Listando Conexiones...</p>
+          </div>
+        ) : followingUsers.filter(f => f.displayName.toLowerCase().includes(searchQuery.toLowerCase())).length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+            {followingUsers.filter(f => f.displayName.toLowerCase().includes(searchQuery.toLowerCase())).map((friend) => (
+              <Card key={friend.uid} className="bg-primary/5 backdrop-blur-3xl border border-primary/20 rounded-[2rem] overflow-hidden group hover:border-primary/50 transition-all duration-500 shadow-xl relative">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 blur-[50px] -z-10 group-hover:bg-primary/30 transition-all" />
+                <div className="p-4 sm:p-6 flex items-center justify-between">
+                  <Link href={`/profile/${friend.uid}`} className="flex items-center gap-4 cursor-pointer flex-1 min-w-0">
+                      <Avatar className="w-12 h-12 sm:w-16 sm:h-16 border-2 border-primary/50 group-hover:scale-110 transition-transform shadow-2xl shrink-0">
+                        <AvatarImage src={friend.photoURL} alt={friend.displayName} className="object-cover" />
+                        <AvatarFallback className="bg-primary/20 text-primary font-black text-xl">{friend.displayName[0]}</AvatarFallback>
+                      </Avatar>
+                    <div className="space-y-0.5 truncate">
+                      <h3 className="text-sm sm:text-lg font-black text-white italic tracking-tighter hover:underline truncate flex items-center gap-1">{friend.displayName} {friend.isVerified && <Verified className="w-3 h-3 text-primary shrink-0 opacity-60" />}</h3>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[9px] text-primary/70 font-black uppercase tracking-widest truncate">@{friend.username}</span>
+                      </div>
+                    </div>
+                  </Link>
+                  <Button 
+                    onClick={() => handleStartChat(friend)}
+                    className="h-10 sm:h-12 px-4 sm:px-6 shrink-0 rounded-xl sm:rounded-2xl bg-white text-black hover:bg-primary hover:text-white group-hover:shadow-xl font-black uppercase text-[9px] sm:text-[10px] tracking-widest transition-all ml-2"
+                  >
+                    Chat <Mail className="w-3 h-3 sm:w-4 sm:h-4 ml-2" />
+                  </Button>
+                </div>
+              </Card>
+            ))}
+          </div>
+        ) : (
+           <div className="text-center py-20 opacity-60">
+              <Sparkles className="w-10 h-10 mx-auto mb-4 text-primary" />
+              <p className="text-sm font-black uppercase tracking-widest text-white">No tienes nodos seguidos</p>
+              <p className="text-[10px] uppercase tracking-widest text-muted-foreground mt-2">Ve a la pestaña Explorar para vincularte con la sociedad Nova.</p>
+           </div>
+        )}
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

@@ -111,6 +111,7 @@ export interface Chat {
   lastMessage?: string;
   updatedAt: any;
   createdAt: any;
+  typing?: Record<string, number>;
 }
 
 export interface Notification {
@@ -242,6 +243,12 @@ export const searchUserByPin = async (pin: string) => {
 };
 
 export const getDiscoverUsers = async (limitNum: number = 5) => {
+  const q = query(collection(db, 'users'), limit(limitNum));
+  const snap = await getDocs(q);
+  return snap.docs.map(doc => ({ uid: doc.id, ...doc.data() })) as UserProfile[];
+};
+
+export const getAllUsers = async (limitNum: number = 200) => {
   const q = query(collection(db, 'users'), limit(limitNum));
   const snap = await getDocs(q);
   return snap.docs.map(doc => ({ uid: doc.id, ...doc.data() })) as UserProfile[];
@@ -494,13 +501,15 @@ export const subscribeToUserChats = (userId: string, callback: (chats: any[]) =>
   }
 };
 
-export const sendMessage = async (chatId: string, senderId: string, text: string) => {
+export const sendMessage = async (chatId: string, senderId: string, text: string, type: 'text'|'audio' = 'text', mediaUrl?: string) => {
   try {
     // 1. Añadir mensaje a la colección global
     await addDoc(collection(db, 'messages'), {
       chatId,
       senderId,
       text,
+      type,
+      mediaUrl: mediaUrl || null,
       createdAt: serverTimestamp(),
     });
     
@@ -541,6 +550,17 @@ export const sendMessage = async (chatId: string, senderId: string, text: string
     console.error("Error crítico en sendMessage:", error);
     throw new Error("Falla de transmisión. Asegúrate de estar vinculado a este nodo de chat.");
   }
+};
+
+export const setTypingStatus = async (chatId: string, userId: string, isTyping: boolean) => {
+    try {
+        const chatRef = doc(db, 'chats', chatId);
+        await updateDoc(chatRef, {
+            [`typing.${userId}`]: isTyping ? Date.now() : 0
+        });
+    } catch (e) {
+        console.warn("Error updating typing status", e);
+    }
 };
 
 export const deleteMessage = async (messageId: string) => {
@@ -842,10 +862,37 @@ export const deleteGroup = async (groupId: string, ownerId: string) => {
 };
 
 export const getGroupByInviteCode = async (code: string) => {
+  // 1. Check legacy/default group inviteCodes
   const q = query(collection(db, 'groups'), where('inviteCode', '==', code.toUpperCase()));
   const snap = await getDocs(q);
-  if (snap.empty) return null;
-  return { id: snap.docs[0].id, ...snap.docs[0].data() } as Group;
+  if (!snap.empty) {
+    return { id: snap.docs[0].id, ...snap.docs[0].data() } as Group;
+  }
+  
+  // 2. Check unique group_invites
+  const inviteRef = doc(db, 'group_invites', code.toUpperCase());
+  const inviteSnap = await getDoc(inviteRef);
+  if (inviteSnap.exists()) {
+    const groupId = inviteSnap.data().groupId;
+    const groupRef = doc(db, 'groups', groupId);
+    const groupSnap = await getDoc(groupRef);
+    if (groupSnap.exists()) {
+      return { id: groupSnap.id, ...groupSnap.data() } as Group;
+    }
+  }
+
+  return null;
+};
+
+export const generateUniqueInvite = async (groupId: string, creatorId: string) => {
+  const code = Math.random().toString(36).substring(2, 10).toUpperCase();
+  await setDoc(doc(db, 'group_invites', code), {
+    groupId,
+    creatorId,
+    createdAt: serverTimestamp(),
+    usedBy: []
+  });
+  return code;
 };
 
 export const subscribeToGroupChannels = (groupId: string, callback: (channels: Channel[]) => void) => {

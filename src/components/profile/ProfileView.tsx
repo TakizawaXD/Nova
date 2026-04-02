@@ -5,13 +5,14 @@ import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card } from '@/components/ui/card';
-import { Edit2, MapPin, Link as LinkIcon, Calendar, Clock, MoreHorizontal, Filter, Loader2, Verified, PlusCircle, UserPlus, UserMinus } from 'lucide-react';
+import { Edit2, MapPin, Link as LinkIcon, Calendar, Clock, MoreHorizontal, Filter, Loader2, Verified, PlusCircle, UserPlus, UserMinus, Mail } from 'lucide-react';
 import { PostCard } from '@/components/feed/PostCard';
-import { subscribeToPosts, Post, updateProfileData, UserProfile, subscribeToUserFollowers, subscribeToUserFollowing, checkFollowStatus, followUser, unfollowUser } from '@/lib/db';
+import { subscribeToPosts, Post, updateProfileData, UserProfile, subscribeToUserFollowers, subscribeToUserFollowing, checkFollowStatus, followUser, unfollowUser, startDirectChat, createNotification } from '@/lib/db';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
+import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 
 interface ProfileViewProps {
@@ -20,14 +21,35 @@ interface ProfileViewProps {
 }
 
 export function ProfileView({ targetProfile, isOwnProfile }: ProfileViewProps) {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const { toast } = useToast();
+  const router = useRouter();
   const [userPosts, setUserPosts] = useState<Post[]>([]);
   const [isEditing, setIsEditing] = useState(false);
   const [updating, setUpdating] = useState(false);
   const [followers, setFollowers] = useState<UserProfile[]>([]);
   const [following, setFollowing] = useState<UserProfile[]>([]);
   const [isFollowing, setIsFollowing] = useState(false);
+
+  const handleStartChat = async () => {
+    if (!user || !profile || !targetProfile) return;
+    try {
+      await startDirectChat(user.uid, targetProfile.uid);
+      await createNotification({
+        userId: targetProfile.uid,
+        type: 'message',
+        senderId: user.uid,
+        senderName: profile.displayName,
+        senderAvatar: profile.photoURL,
+        content: 'ha iniciado una nueva línea de transmisión contigo.',
+        link: `/messages`,
+        read: false,
+      });
+      router.push(`/messages`);
+    } catch (e) {
+      toast({ variant: "destructive", title: "Falla de red", description: "No se pudo iniciar la conexión." });
+    }
+  };
   const [editForm, setEditForm] = useState({
     displayName: targetProfile.displayName || '',
     bio: targetProfile.bio || '',
@@ -181,15 +203,24 @@ export function ProfileView({ targetProfile, isOwnProfile }: ProfileViewProps) {
               </Dialog>
             </>
           ) : (
-            <Button 
-              onClick={handleToggleFollow}
-              className={cn(
-                "font-black uppercase tracking-widest text-[10px] h-14 w-full md:w-64 gap-3 rounded-2xl shadow-xl transition-all hover:scale-105 active:scale-95",
-                isFollowing ? "bg-white/5 text-white border border-white/10" : "bg-primary text-white"
-              )}
-            >
-              {isFollowing ? <><UserMinus className="w-5 h-5" /> Dejar de Seguir</> : <><UserPlus className="w-5 h-5" /> Seguir Nodo</>}
-            </Button>
+            <div className="flex gap-4 w-full md:w-auto">
+                <Button 
+                    onClick={handleToggleFollow}
+                    className={cn(
+                        "font-black uppercase tracking-widest text-[10px] h-14 flex-1 md:w-48 gap-3 rounded-2xl shadow-xl transition-all hover:scale-105 active:scale-95",
+                        isFollowing ? "bg-white/5 text-white border border-white/10" : "bg-primary text-white"
+                    )}
+                >
+                    {isFollowing ? <><UserMinus className="w-5 h-5" /> Dejar de Seguir</> : <><UserPlus className="w-5 h-5" /> Seguir Nodo</>}
+                </Button>
+                <Button 
+                    onClick={handleStartChat}
+                    variant="ghost" 
+                    className="bg-white/5 hover:bg-white/10 text-white font-black uppercase tracking-widest text-[10px] h-14 w-14 md:w-14 p-0 rounded-2xl border border-white/5 transition-all shadow-xl"
+                >
+                    <Mail className="w-5 h-5" />
+                </Button>
+            </div>
           )}
         </div>
       </div>

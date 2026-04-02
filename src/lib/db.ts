@@ -44,6 +44,18 @@ export interface UserProfile {
   createdAt?: any;
 }
 
+export interface PollOption {
+  text: string;
+  votes: number;
+}
+
+export interface Poll {
+  question: string;
+  options: PollOption[];
+  votedBy: string[]; // uids
+  expiresAt?: any;
+}
+
 export interface Post {
   id?: string;
   authorId: string;
@@ -52,6 +64,7 @@ export interface Post {
   authorAvatar: string;
   content: string;
   imageUrl?: string;
+  poll?: Poll; // Nuevo: Encuestas funcionales
   createdAt: any;
   likes: number;
   likedBy?: string[];
@@ -339,7 +352,6 @@ export const subscribeToPosts = (callback: (posts: Post[]) => void, onError?: (e
     if (onError) onError(error);
   });
 };
-
 export const toggleLikePost = async (postId: string, userId: string, isLiked: boolean) => {
   const postRef = doc(db, 'posts', postId);
   if (isLiked) {
@@ -367,14 +379,32 @@ export const toggleLikePost = async (postId: string, userId: string, isLiked: bo
             senderName: me.displayName,
             senderAvatar: me.photoURL,
             content: 'ha reaccionado a tu post cósmico.',
-            link: `/profile?postId=${postId}`,
-            read: false
+            link: `/profile/${post.authorId}?postId=${postId}`,
+            read: false,
           });
         }
       }
     }
   }
 };
+
+export const votePoll = async (postId: string, optionIndex: number, userId: string) => {
+  const postRef = doc(db, 'posts', postId);
+  const postSnap = await getDoc(postRef);
+  if (!postSnap.exists()) return;
+  
+  const post = postSnap.data() as Post;
+  if (!post.poll || post.poll.votedBy.includes(userId)) return;
+  
+  const newOptions = [...post.poll.options];
+  newOptions[optionIndex].votes += 1;
+  
+  await updateDoc(postRef, {
+    'poll.options': newOptions,
+    'poll.votedBy': arrayUnion(userId)
+  });
+};
+;
 
 export const deletePost = async (postId: string) => {
   await deleteDoc(doc(db, 'posts', postId));

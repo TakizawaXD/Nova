@@ -7,7 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardFooter } from '@/components/ui/card';
 import { useAuth } from '@/context/AuthContext';
-import { updatePost, deletePost, toggleLikePost, addComment, subscribeToComments, deleteComment, Comment } from '@/lib/db';
+import { updatePost, deletePost, toggleLikePost, addComment, subscribeToComments, deleteComment, Comment, votePoll, Poll } from '@/lib/db';
 import { useToast } from '@/hooks/use-toast';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
@@ -30,6 +30,7 @@ interface PostCardProps {
   };
   content: string;
   image?: string;
+  poll?: Poll;
   timestamp: string;
   likes?: number;
   comments?: number;
@@ -38,7 +39,7 @@ interface PostCardProps {
   priority?: boolean;
 }
 
-export function PostCard({ id, author, content, image, timestamp, likes = 0, comments: initialCommentsCount = 0, shares = 0, likedBy = [], priority = false }: PostCardProps) {
+export function PostCard({ id, author, content, image, poll, timestamp, likes = 0, comments: initialCommentsCount = 0, shares = 0, likedBy = [], priority = false }: PostCardProps) {
   const { user, profile } = useAuth();
   const { toast } = useToast();
   
@@ -55,6 +56,19 @@ export function PostCard({ id, author, content, image, timestamp, likes = 0, com
 
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [showStickerPicker, setShowStickerPicker] = useState(false);
+
+  const totalVotes = poll?.options.reduce((acc: number, opt) => acc + (opt.votes || 0), 0) || 0;
+  const hasVoted = user && poll?.votedBy?.includes(user.uid);
+
+  const handleVote = async (idx: number) => {
+    if (!id || !user) return;
+    try {
+      await votePoll(id, idx, user.uid);
+      toast({ title: "Señal Registrada", description: "Tu voto ha sido procesado por el núcleo." });
+    } catch (e) {
+      toast({ variant: "destructive", title: "Falla de Sistema", description: "No se pudo sincronizar el voto." });
+    }
+  };
 
   const COMMON_EMOJIS = ['🔥', '✨', '🚀', '⭐', '💎', '❤️', '🙌', '💯', '🦾', '👾', '🪐', '⚡'];
   const NOVA_STICKERS = [
@@ -201,6 +215,43 @@ export function PostCard({ id, author, content, image, timestamp, likes = 0, com
 
         <CardContent className="px-6 py-2 pb-6 space-y-5">
           <p className="text-base leading-relaxed whitespace-pre-wrap text-white/90 font-medium">{content}</p>
+          
+          {poll && (
+            <div className="space-y-3 bg-white/5 p-6 rounded-[2rem] border border-white/5 mt-4">
+              <h4 className="text-xs font-black uppercase tracking-widest text-primary mb-4 flex items-center gap-2">
+                <Sparkles className="w-4 h-4" /> Sondeo de Opinión
+              </h4>
+              <div className="space-y-3">
+                {poll.options.map((opt, i) => {
+                  const percentage = totalVotes > 0 ? Math.round((opt.votes / totalVotes) * 100) : 0;
+                  return (
+                    <button 
+                      key={i}
+                      disabled={hasVoted}
+                      onClick={() => handleVote(i)}
+                      className={cn(
+                        "w-full relative h-12 rounded-xl overflow-hidden border border-white/5 transition-all group/opt text-left",
+                        hasVoted ? "cursor-default" : "hover:border-primary/50 cursor-pointer"
+                      )}
+                    >
+                      <div 
+                        className={cn("absolute inset-y-0 left-0 transition-all duration-1000", hasVoted ? "bg-primary/20" : "bg-white/5 group-hover/opt:bg-primary/10")} 
+                        style={{ width: hasVoted ? `${percentage}%` : '0%' }}
+                      />
+                      <div className="relative h-full flex items-center justify-between px-4 z-10">
+                        <span className="text-sm font-bold text-white/80">{opt.text}</span>
+                        {hasVoted && <span className="text-xs font-black text-primary italic">{percentage}%</span>}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+              <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mt-4">
+                {totalVotes} Ciudadanos han participado {hasVoted && "• Señal Registrada"}
+              </p>
+            </div>
+          )}
+
           {image && (
             <div className="relative aspect-[16/10] w-full rounded-[2rem] overflow-hidden border border-white/10 mt-4 group/image shadow-2xl">
               <Image 

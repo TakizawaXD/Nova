@@ -60,6 +60,14 @@ export function CreatePost() {
         shares: 0,
       };
 
+      if (activeAttachment === 'poll' && pollOptions.some(o => o.trim())) {
+        postPayload.poll = {
+          question: content || "¿Qué opinas?",
+          options: pollOptions.filter(o => o.trim()).map(o => ({ text: o, votes: 0 })),
+          votedBy: []
+        };
+      }
+
       // Firestore strict rule: No undefined values!
       if (activeAttachment === 'media' && mediaUrl.trim()) {
         postPayload.imageUrl = mediaUrl.trim();

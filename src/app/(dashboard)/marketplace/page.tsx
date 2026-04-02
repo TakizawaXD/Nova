@@ -229,7 +229,7 @@ export default function MarketplacePage() {
                 <DialogTitle className="text-4xl font-black uppercase tracking-tighter text-white italic text-center">
                     {editingItemId ? 'Recalibrar' : 'Fundar'} <span className="text-primary">Activo</span>
                 </DialogTitle>
-                <p className="text-center text-muted-foreground/60 font-medium uppercase text-[10px] tracking-[0.3em] mt-2">Protocolo de Registro Comercial NovaSphere</p>
+                <DialogDescription className="text-center text-muted-foreground/60 font-medium uppercase text-[10px] tracking-[0.3em] mt-2">Protocolo de Registro Comercial NovaSphere</DialogDescription>
               </DialogHeader>
               <form onSubmit={handleListItem} className="space-y-8 mt-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">

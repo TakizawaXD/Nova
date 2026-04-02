@@ -185,6 +185,7 @@ export function ProfileView({ targetProfile, isOwnProfile }: ProfileViewProps) {
                 <DialogContent className="bg-[#050510]/95 backdrop-blur-3xl border border-white/10 rounded-[3rem] max-w-xl p-8 shadow-2xl">
                   <DialogHeader>
                     <DialogTitle className="text-3xl font-black uppercase tracking-tighter text-white italic">Modificar Identidad <span className="text-primary">•</span></DialogTitle>
+                    <DialogDescription className="sr-only">Actualiza los datos públicos de tu identidad en NovaSphere, incluyendo nombre y biografía.</DialogDescription>
                   </DialogHeader>
                   <div className="space-y-6 py-6 font-medium">
                     <div className="space-y-2">

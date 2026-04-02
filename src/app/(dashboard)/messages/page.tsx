@@ -588,6 +588,7 @@ export default function MessagesPage() {
         <DialogContent className="bg-[#050510]/95 backdrop-blur-3xl border border-white/10 rounded-[3.5rem] max-w-xl p-10 shadow-2xl">
           <DialogHeader className="mb-8">
             <DialogTitle className="text-3xl font-black uppercase tracking-tighter text-white italic text-center">Protocolo de Nueva Conexión <span className="text-primary">•</span></DialogTitle>
+            <DialogDescription className="sr-only">Busca y selecciona un contacto para iniciar una nueva conversación privada.</DialogDescription>
           </DialogHeader>
           <div className="relative mb-8 group">
             <Search className="absolute left-6 top-1/2 -translate-y-1/2 w-6 h-6 text-muted-foreground group-focus-within:text-primary transition-colors" />

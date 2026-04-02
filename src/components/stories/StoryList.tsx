@@ -274,6 +274,10 @@ export function StoryList() {
       {/* STORY VIEWER MODAL - With Navigation */}
       <Dialog open={!!selectedAuthorId} onOpenChange={(open) => !open && setSelectedAuthorId(null)}>
         <DialogContent className="max-w-md h-[85vh] bg-black border-none p-0 overflow-hidden rounded-[3rem] shadow-[0_0_100px_rgba(0,0,0,0.8)]">
+          <DialogHeader className="sr-only">
+            <DialogTitle>Visor de Destellos Nova</DialogTitle>
+            <DialogDescription>Visualización de historias efímeras de la red.</DialogDescription>
+          </DialogHeader>
           {currentStory && (
             <div className="relative w-full h-full flex flex-col">
               

@@ -348,17 +348,6 @@ export default function MarketplacePage() {
                     </div>
                 </div>
 
-                <div className="grid grid-cols-1 gap-4">
-                    <div className="space-y-4">
-                        <label className="text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 ml-2">ID de Red (URL opcional)</label>
-                        <Input 
-                            placeholder="https://visual.net/item.png"
-                            value={formData.image}
-                            onChange={e => setFormData({...formData, image: e.target.value})}
-                            className="bg-white/5 border-white/5 rounded-2xl h-14 px-6 text-white"
-                        />
-                    </div>
-                </div>
 
                 <div className="grid grid-cols-1 gap-4">
                     <div className="space-y-4">

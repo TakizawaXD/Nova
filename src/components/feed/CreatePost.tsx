@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useRef } from 'react';
-import { Image as ImageIcon, MapPin, Smile, Send, Film, BarChart3, Loader2, X, PlusCircle } from 'lucide-react';
+import { Image as ImageIcon, MapPin, Smile, Send, Film, BarChart3, Loader2, X, PlusCircle, Plus } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -195,12 +195,13 @@ export function CreatePost() {
                   onChange={handleFileChange}
                 />
                 {!selectedFile && (
-                  <Input
-                    placeholder="URL de imagen o video..."
-                    value={mediaUrl}
-                    onChange={e => setMediaUrl(e.target.value)}
-                    className="bg-white/5 border-white/5 rounded-xl text-sm h-11 px-4 focus:bg-white/10"
-                  />
+                  <Button 
+                    onClick={() => fileInputRef.current?.click()}
+                    variant="outline"
+                    className="w-full bg-white/5 border-white/10 hover:bg-white/10 text-xs font-black uppercase tracking-widest h-12 rounded-xl gap-2"
+                  >
+                    <Plus className="w-4 h-4" /> Seleccionar Archivo del Dispositivo
+                  </Button>
                 )}
                 {mediaUrl && (
                   <div className="aspect-video w-full bg-white/5 rounded-xl border border-white/5 overflow-hidden">

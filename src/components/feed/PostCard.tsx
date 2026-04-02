@@ -254,23 +254,40 @@ export function PostCard({ id, author, content, image, timestamp, likes = 0, com
             </div>
           </div>
 
+          {/* Vista Previa de Comentarios (Criterio Perfeccionista) */}
+          {!showComments && postComments.length > 0 && (
+            <div className="w-full px-6 py-3 bg-white/[0.01] border-t border-white/5 space-y-2 opacity-60 group-hover:opacity-100 transition-opacity">
+                {postComments.slice(-2).map((c, i) => (
+                    <div key={i} className="flex gap-2 text-[11px] font-medium items-center">
+                        <span className="text-primary font-black italic">@{c.authorName.toLowerCase().replace(/\s/g, '_')}</span>
+                        <span className="text-white/70 truncate">{c.text}</span>
+                    </div>
+                ))}
+                {postComments.length > 2 && (
+                    <button onClick={() => setShowComments(true)} className="text-[9px] font-black uppercase tracking-widest text-primary/50 hover:text-primary transition-colors">
+                        Ver los {postComments.length} comentarios vinculados
+                    </button>
+                )}
+            </div>
+          )}
+
           {showComments && (
-            <div className="w-full px-6 pb-8 animate-fade-in border-t border-white/5 pt-6 bg-[#030303]/40">
+            <div className="w-full px-6 pb-8 animate-in slide-in-from-top-4 duration-500 border-t border-white/5 pt-6 bg-[#030303]/40">
               <div className="flex gap-4 mb-8">
-                <Avatar className="h-10 w-10 border border-white/10 shrink-0">
+                <Avatar className="h-10 w-10 border-2 border-primary/20 shrink-0 shadow-lg">
                   <AvatarImage src={profile?.photoURL} className="object-cover" />
                   <AvatarFallback className="bg-primary/20 text-primary font-black uppercase">{profile?.displayName?.charAt(0)}</AvatarFallback>
                 </Avatar>
                 <div className="flex-1 space-y-3">
-                  <div className="flex gap-3 relative">
+                  <div className="flex gap-3 relative group/comment-input">
                     <Input 
                       value={newComment}
                       onChange={e => setNewComment(e.target.value)}
-                      placeholder="Escribe un comentario brillante..." 
-                      className="bg-white/5 border-white/5 rounded-2xl h-12 text-sm text-white px-5 focus:bg-white/10 transition-all placeholder:text-muted-foreground/30"
+                      placeholder="Sincronizar respuesta..." 
+                      className="bg-white/5 border-white/5 rounded-2xl h-12 text-sm text-white px-5 focus:bg-white/10 focus:border-primary/30 transition-all placeholder:text-muted-foreground/30"
                       onKeyPress={e => e.key === 'Enter' && handleAddComment()}
                     />
-                    <div className="absolute right-14 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                    <div className="absolute right-14 top-1/2 -translate-y-1/2 flex items-center gap-1 opacity-40 group-focus-within/comment-input:opacity-100 transition-opacity">
                         <Button 
                             variant="ghost" 
                             size="icon" 
@@ -288,8 +305,8 @@ export function PostCard({ id, author, content, image, timestamp, likes = 0, com
                             <Ghost className="w-4 h-4" />
                         </Button>
                     </div>
-                    <Button onClick={handleAddComment} size="icon" className="h-12 w-12 shrink-0 bg-primary hover:bg-primary/80 rounded-2xl shadow-xl shadow-primary/20 transition-all active:scale-95">
-                      <Send className="w-5 h-5" />
+                    <Button onClick={handleAddComment} size="icon" className="h-12 w-12 shrink-0 bg-primary text-white hover:bg-primary/80 rounded-2xl shadow-xl shadow-primary/30 transition-all active:scale-95 group/send-btn">
+                      <Send className="w-5 h-5 group-hover/send-btn:translate-x-1 group-hover/send-btn:-translate-y-1 transition-transform" />
                     </Button>
                   </div>
 

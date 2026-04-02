@@ -228,6 +228,12 @@ export const searchUserByPin = async (pin: string) => {
   return { uid: userDoc.id, ...userDoc.data() } as unknown as UserProfile;
 };
 
+export const getDiscoverUsers = async (limitNum: number = 5) => {
+  const q = query(collection(db, 'users'), limit(limitNum));
+  const snap = await getDocs(q);
+  return snap.docs.map(doc => ({ uid: doc.id, ...doc.data() })) as UserProfile[];
+};
+
 export const followUser = async (currentUserId: string, targetUserId: string) => {
   const currentUserRef = doc(db, 'users', currentUserId);
   const targetUserRef = doc(db, 'users', targetUserId);

@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
-import { searchUserByPin, followUser, getUserFriends, UserProfile, startDirectChat } from '@/lib/db';
+import { searchUserByPin, followUser, getUserFriends, UserProfile, startDirectChat, getDiscoverUsers } from '@/lib/db';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 
@@ -18,10 +18,11 @@ export default function FriendsPage() {
   const { toast } = useToast();
   const router = useRouter();
   
+  const [searchQuery, setSearchQuery] = useState('');
   const [friends, setFriends] = useState<UserProfile[]>([]);
+  const [discoverUsers, setDiscoverUsers] = useState<UserProfile[]>([]);
   const [loading, setLoading] = useState(true);
   
-  const [searchPin, setSearchPin] = useState('');
   const [foundUser, setFoundUser] = useState<UserProfile | null>(null);
   const [searching, setSearching] = useState(false);
   const [adding, setAdding] = useState(false);
@@ -29,8 +30,21 @@ export default function FriendsPage() {
   useEffect(() => {
     if (user) {
       loadFriends();
+      getDiscoverUsers(4).then((users: UserProfile[]) => setDiscoverUsers(users.filter((u: UserProfile) => u.uid !== user.uid)));
     }
   }, [user]);
+
+  // Búsqueda en tiempo real por PIN si tiene longitud de PIN (6 chars)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (searchQuery.length === 6) {
+        handleSearch(searchQuery);
+      } else {
+        setFoundUser(null);
+      }
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
   const loadFriends = async () => {
     if (!user) return;
@@ -45,21 +59,23 @@ export default function FriendsPage() {
     }
   };
 
-  const handleSearch = async () => {
-    if (!searchPin.trim()) return;
+  const handleSearch = async (pin: string) => {
     setSearching(true);
     try {
-      const result = await searchUserByPin(searchPin);
+      const result = await searchUserByPin(pin);
       setFoundUser(result);
-      if (!result) {
-        toast({ variant: 'destructive', title: 'Explorador no encontrado', description: 'El PIN estelar no existe.' });
-      }
     } catch (error) {
-      toast({ variant: 'destructive', title: 'Error', description: 'Fallo en la búsqueda.' });
+      console.error("Search error", error);
     } finally {
       setSearching(false);
     }
   };
+
+  const filteredFriends = friends.filter(f => 
+    f.displayName.toLowerCase().includes(searchQuery.toLowerCase()) || 
+    f.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    f.uid.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   const handleAddFriend = async (targetId: string) => {
     if (!user) return;
@@ -68,7 +84,7 @@ export default function FriendsPage() {
       await followUser(user.uid, targetId);
       toast({ title: 'Vínculo creado', description: 'Has añadido este explorador a tu constelación.' });
       setFoundUser(null);
-      setSearchPin('');
+      setSearchQuery('');
       loadFriends(); // refetch
     } catch (error) {
       toast({ variant: 'destructive', title: 'Error', description: 'No se pudo crear el vínculo.' });
@@ -78,12 +94,9 @@ export default function FriendsPage() {
   };
 
   const handleStartChat = async (friendProfile: UserProfile) => {
-    if (!profile || !friendProfile) return;
+    if (!user || !profile || !friendProfile) return;
     try {
-      // Usamos el hook router importado para navegar al chat con ID.
-      // Pero startDirectChat requiere ambos UserProfiles.
-      // profile is UserProfile, we need to pass them
-      const chatId = await startDirectChat(profile, friendProfile);
+      const chatId = await startDirectChat(user.uid, friendProfile.uid);
       router.push(`/messages`);
     } catch (error) {
        toast({ variant: 'destructive', title: 'Error', description: 'No se pudo crear el hilo de mensajes.' });
@@ -111,25 +124,27 @@ export default function FriendsPage() {
         <div className="flex flex-col gap-8">
           <div className="space-y-1">
             <h2 className="text-2xl font-black text-white uppercase tracking-tighter italic flex items-center gap-3">
-              <Search className="w-6 h-6 text-primary" /> Capturar Nodo <span className="text-primary">/</span> PIN
+              {searching ? <Loader2 className="w-6 h-6 animate-spin text-primary" /> : <Search className="w-6 h-6 text-primary" />} 
+              Capturar Nodo <span className="text-primary">/</span> Red
             </h2>
-            <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest leading-relaxed">Localiza ciudadanos Nova mediante su identificador único de red.</p>
+            <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest leading-relaxed">
+              Escribe un nombre para filtrar tu red o un PIN de 6 caracteres para localizar nuevos ciudadanos.
+            </p>
           </div>
 
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="relative flex-1 group/input">
               <Input 
-                value={searchPin}
-                onChange={(e) => setSearchPin(e.target.value)}
-                placeholder="EJ: 9A2B4C"
-                className="bg-white/5 border-white/5 focus:bg-white/10 rounded-2xl h-16 px-8 uppercase tracking-[0.3em] text-2xl font-black text-white transition-all placeholder:text-muted-foreground/20"
-                onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="BUSCAR NOMBRE O PIN..."
+                className="bg-white/5 border-white/5 focus:bg-white/10 rounded-2xl h-16 px-8 uppercase tracking-[0.2em] text-2xl font-black text-white transition-all placeholder:text-muted-foreground/20"
               />
               <div className="absolute inset-0 rounded-2xl border border-primary/0 group-focus-within/input:border-primary/30 pointer-events-none transition-all" />
             </div>
-            <Button onClick={handleSearch} disabled={searching} className="h-16 px-10 rounded-2xl font-black bg-primary text-white hover:bg-primary/80 transition-all shadow-2xl shadow-primary/20 uppercase tracking-widest text-[11px]">
-              {searching ? <Loader2 className="w-6 h-6 animate-spin text-white" /> : 'Sincronizar'}
-            </Button>
+            <div className="hidden sm:flex h-16 px-10 rounded-2xl font-black bg-white/5 text-muted-foreground items-center uppercase tracking-widest text-[10px] border border-white/5">
+                Búsqueda Activa
+            </div>
           </div>
         </div>
 
@@ -178,9 +193,9 @@ export default function FriendsPage() {
             <Loader2 className="w-12 h-12 text-primary animate-spin" />
             <p className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground">Analizando topología de red...</p>
           </div>
-        ) : friends.length > 0 ? (
+        ) : filteredFriends.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {friends.map((friend) => (
+            {filteredFriends.map((friend) => (
               <Card key={friend.uid} className="bg-[#050510]/40 backdrop-blur-3xl border border-white/5 rounded-[2.5rem] overflow-hidden group hover:border-primary/30 transition-all duration-500 shadow-2xl relative">
                 <div className="p-8 flex items-center justify-between">
                   <Link href={`/profile/${friend.uid}`} className="flex items-center gap-6 cursor-pointer flex-1">
@@ -205,19 +220,44 @@ export default function FriendsPage() {
                     <Mail className="w-6 h-6" />
                   </Button>
                 </div>
-                
-                {/* Micro-Interaction Highlight Overlay */}
                 <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
               </Card>
             ))}
           </div>
+        ) : friends.length > 0 ? (
+           <div className="text-center py-32 opacity-40">
+              <Search className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+              <p className="text-sm font-black uppercase tracking-widest">No se detectan nodos en el filtro actual</p>
+           </div>
         ) : (
           <div className="text-center py-40 bg-[#050510]/20 rounded-[4rem] border border-dashed border-white/5 mx-auto px-10">
             <div className="w-24 h-24 bg-primary/10 rounded-[2rem] mx-auto flex items-center justify-center animate-bounce-slow mb-8 border border-primary/20">
                <Sparkles className="w-12 h-12 text-primary opacity-60" />
             </div>
             <h2 className="text-3xl font-black text-white uppercase tracking-tighter italic">Tu Constelación Está Deshabitada</h2>
-            <p className="text-muted-foreground font-medium text-lg mt-4 max-w-sm mx-auto">Inicia la expansión de tu red sincronizando con otros exploradores mediante su PIN estelar.</p>
+            <p className="text-muted-foreground font-medium text-lg mt-4 max-w-sm mx-auto mb-12">Inicia la expansión de tu red sincronizando con otros exploradores o descubre nuevos ciudadanos.</p>
+            
+            {discoverUsers.length > 0 && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-left">
+                    {discoverUsers.map(u => (
+                        <div key={u.uid} className="flex items-center justify-between p-4 bg-white/5 rounded-2xl border border-white/5 hover:border-primary/30 transition-all group">
+                            <div className="flex items-center gap-3">
+                                <Avatar className="h-10 w-10 border border-white/10">
+                                    <AvatarImage src={u.photoURL} />
+                                    <AvatarFallback>{u.displayName[0]}</AvatarFallback>
+                                </Avatar>
+                                <div>
+                                    <p className="text-sm font-black text-white italic">@{u.username}</p>
+                                    <p className="text-[10px] text-muted-foreground uppercase">{u.displayName}</p>
+                                </div>
+                            </div>
+                            <Button onClick={() => handleAddFriend(u.uid)} size="sm" variant="ghost" className="h-8 w-8 rounded-lg bg-primary/10 text-primary hover:bg-primary hover:text-white transition-all">
+                                <UserPlus className="w-4 h-4" />
+                            </Button>
+                        </div>
+                    ))}
+                </div>
+            )}
           </div>
         )}
       </div>

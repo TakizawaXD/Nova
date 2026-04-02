@@ -163,6 +163,7 @@ export default function MarketplacePage() {
     .sort((a, b) => {
       if (sortOrder === 'price-asc') return parseFloat(a.price) - parseFloat(b.price);
       if (sortOrder === 'price-desc') return parseFloat(b.price) - parseFloat(a.price);
+      if (sortOrder === 'newest') return (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0);
       return 0;
     });
 

@@ -11,7 +11,6 @@ const menuItems = [
   { label: 'Explorar', icon: Compass, href: '/explore' },
   { label: 'Mensajes', icon: MessageCircle, href: '/messages' },
   { label: 'Destellos', icon: History, href: '/stories' },
-  { label: 'Reels', icon: PlayCircle, href: '/reels' },
   { label: 'Comunidades', icon: Users, href: '/communities' },
   { label: 'Tienda', icon: ShoppingBag, href: '/marketplace' },
   { label: 'Amigos', icon: Heart, href: '/friends' },

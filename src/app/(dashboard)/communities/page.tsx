@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Plus, Hash, Users, Settings, Send, Loader2, ShieldAlert, ChevronLeft, Compass, Trash2, Share2, Copy, Image, Smile, UserPlus, Check, Search, Camera } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';

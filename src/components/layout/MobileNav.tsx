@@ -23,7 +23,23 @@ export function MobileNav() {
   const pathname = usePathname();
 
   return (
-    <div className="sticky top-20 z-40 w-full md:hidden bg-background/95 backdrop-blur-xl shadow-lg pb-1 pt-2 border-b border-white/5">
+    <div className="sticky top-0 z-40 w-full md:hidden bg-[#050510]/95 backdrop-blur-xl shadow-lg pb-1 border-b border-white/5 pt-3">
+      {/* Brand Header Mobile */}
+      <div className="px-6 pb-3 flex items-center justify-between border-b border-white/5 mb-3">
+        <Link href="/home" className="flex items-center gap-3 group">
+          <div className="w-9 h-9 bg-primary rounded-lg flex items-center justify-center shadow-lg shadow-primary/20">
+            <span className="text-white font-[1000] text-lg tracking-tighter">NX</span>
+          </div>
+          <span className="text-xl font-black text-white tracking-tighter uppercase italic-nova">
+            NOVAX
+          </span>
+        </Link>
+        <div className="flex items-center gap-2">
+            <div className="w-2 h-2 rounded-full bg-green-500 shadow-[0_0_8px_theme(colors.green.500)]" />
+            <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground opacity-60">Núcleo Activo</span>
+        </div>
+      </div>
+
       <div className="w-full overflow-x-auto no-scrollbar scroll-smooth px-4">
         <nav className="flex items-center gap-4 w-max mx-auto md:mx-0 py-1">
           {navItems.map((item) => {

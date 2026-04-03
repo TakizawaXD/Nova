@@ -3,10 +3,11 @@ import './globals.css';
 import { Toaster } from "@/components/ui/toaster"
 import { AuthProvider } from '@/context/AuthContext';
 import { ThemeProvider } from '@/context/ThemeContext';
+import { IdentitySyncModal } from '@/components/auth/IdentitySyncModal';
 
 export const metadata: Metadata = {
-  title: 'NovaSphere | Social Ecosystem',
-  description: 'The definitive social ecosystem powered by NovaAI.',
+  title: 'NOVAX | Social Ecosystem',
+  description: 'The definitive social ecosystem powered by NOVAX AI.',
 };
 
 export default function RootLayout({
@@ -25,7 +26,7 @@ export default function RootLayout({
         <link rel="manifest" href="/manifest.json" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-        <meta name="apple-mobile-web-app-title" content="NovaSphere" />
+        <meta name="apple-mobile-web-app-title" content="NOVAX" />
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="theme-color" content="#8B5CF6" />
         <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
@@ -41,6 +42,7 @@ export default function RootLayout({
         <ThemeProvider>
           <AuthProvider>
             {children}
+            <IdentitySyncModal />
             <Toaster />
           </AuthProvider>
         </ThemeProvider>

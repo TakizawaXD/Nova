@@ -26,7 +26,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { InstallButton } from '@/components/pwa/InstallButton';
 import { uploadToSupabase } from '@/lib/supabase';
 
-type SettingsTab = 'profile' | 'security' | 'notifications' | 'theme' | 'language';
+type SettingsTab = 'profile' | 'security' | 'privacy' | 'notifications' | 'theme' | 'language';
 
 export default function SettingsPage() {
   const { profile, user } = useAuth();
@@ -39,7 +39,8 @@ export default function SettingsPage() {
     displayName: profile?.displayName || '',
     bio: profile?.bio || '',
     photoURL: profile?.photoURL || '',
-    bannerURL: profile?.bannerURL || ''
+    bannerURL: profile?.bannerURL || '',
+    privacy: profile?.privacy || { showStatus: true, showProfile: true, allowDirectMessages: true }
   });
 
   const avatarInputRef = useRef<HTMLInputElement>(null);
@@ -230,6 +231,46 @@ export default function SettingsPage() {
             </div>
           </Card>
         );
+      case 'privacy':
+        return (
+          <Card className="glass border-white/5 rounded-[2rem] sm:rounded-[2.5rem] p-4 sm:p-8 animate-fade-in">
+            <CardTitle className="text-lg sm:text-xl font-black uppercase tracking-tighter mb-6 flex items-center gap-3 mt-2 sm:mt-0">
+                <Globe className="w-5 h-5 sm:w-6 sm:h-6 text-primary" /> Privacidad del Nodo
+            </CardTitle>
+            <div className="space-y-6 sm:space-y-8 mt-4">
+                <div className="space-y-6">
+                    <PrivacyToggle 
+                        title="Visibilidad de Señal" 
+                        description="Hacer que tu estado (conectado/ausente) sea visible para otros." 
+                        icon={Smartphone}
+                        checked={editProfile.privacy.showStatus}
+                        onChange={(val: boolean) => setEditProfile({...editProfile, privacy: {...editProfile.privacy, showStatus: val}})}
+                    />
+                    <Separator className="bg-white/5" />
+                    <PrivacyToggle 
+                        title="Perfil Público" 
+                        description="Permitir que ciudadanos fuera de tu red vea tu biografía y posts." 
+                        icon={User}
+                        checked={editProfile.privacy.showProfile}
+                        onChange={(val: boolean) => setEditProfile({...editProfile, privacy: {...editProfile.privacy, showProfile: val}})}
+                    />
+                    <Separator className="bg-white/5" />
+                    <PrivacyToggle 
+                        title="Transmisiones Directas" 
+                        description="Permitir mensajes directos de usuarios que no sigues." 
+                        icon={Mail}
+                        checked={editProfile.privacy.allowDirectMessages}
+                        onChange={(val: boolean) => setEditProfile({...editProfile, privacy: {...editProfile.privacy, allowDirectMessages: val}})}
+                    />
+                </div>
+                <div className="mt-8 pt-8 border-t border-white/5">
+                    <Button onClick={handleSaveProfile} disabled={loading} className="w-full rounded-2xl bg-primary hover:bg-primary/80 font-black uppercase tracking-widest text-[11px] h-14 shadow-xl shadow-primary/20">
+                        {loading ? 'Sincronizando...' : 'Guardar Configuración de Privacidad'}
+                    </Button>
+                </div>
+            </div>
+          </Card>
+        );
       case 'notifications':
         return (
           <div className="space-y-6">
@@ -300,6 +341,7 @@ export default function SettingsPage() {
         <div className="lg:col-span-3 flex overflow-x-auto lg:flex-col gap-2 pb-6 lg:pb-0 h-fit lg:sticky lg:top-24 hidden-scrollbar relative mt-4 lg:mt-0">
           <SettingsNavItem icon={User} label="Perfil" active={activeTab === 'profile'} onClick={() => setActiveTab('profile')} />
           <SettingsNavItem icon={Shield} label="Seguridad" active={activeTab === 'security'} onClick={() => setActiveTab('security')} />
+          <SettingsNavItem icon={Globe} label="Privacidad" active={activeTab === 'privacy'} onClick={() => setActiveTab('privacy')} />
           <SettingsNavItem icon={Bell} label="Avisos" active={activeTab === 'notifications'} onClick={() => setActiveTab('notifications')} />
           <SettingsNavItem icon={Moon} label="Tema" active={activeTab === 'theme'} onClick={() => setActiveTab('theme')} />
           <SettingsNavItem icon={Languages} label="Idioma" active={activeTab === 'language'} onClick={() => setActiveTab('language')} />
@@ -424,4 +466,25 @@ function ThemeOption({ id, name, color }: { id: any; name: string; color: string
       )}
     </button>
   );
+}
+
+function PrivacyToggle({ title, description, icon: Icon, checked, onChange }: any) {
+    return (
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between group gap-4">
+            <div className="flex items-center gap-4 sm:gap-5">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-white/5 flex items-center justify-center text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary transition-all shadow-xl shrink-0">
+                    <Icon className="w-5 h-5 sm:w-6 sm:h-6" />
+                </div>
+                <div className="space-y-0.5">
+                    <p className="font-black text-white italic text-sm sm:text-base tracking-tight">{title}</p>
+                    <p className="text-[9px] sm:text-[10px] text-muted-foreground font-medium uppercase tracking-widest leading-relaxed max-w-sm">{description}</p>
+                </div>
+            </div>
+            <Switch 
+                checked={checked} 
+                onCheckedChange={onChange}
+                className="data-[state=checked]:bg-primary h-6 w-10 sm:h-7 sm:w-12 shrink-0 self-start sm:self-auto ml-auto" 
+            />
+        </div>
+    );
 }

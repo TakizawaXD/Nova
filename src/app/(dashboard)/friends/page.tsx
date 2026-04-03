@@ -79,9 +79,9 @@ export default function FriendsPage() {
   };
 
   const filteredFriends = friends.filter(f => 
-    f.displayName.toLowerCase().includes(searchQuery.toLowerCase()) || 
-    f.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    f.uid.toLowerCase().includes(searchQuery.toLowerCase())
+    f.displayName?.toLowerCase().includes(searchQuery.toLowerCase()) || 
+    f.username?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    f.uid?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const handleAddFriend = async (targetId: string) => {
@@ -207,7 +207,7 @@ export default function FriendsPage() {
                     <div className="relative group-hover:scale-110 transition-transform duration-500 shrink-0">
                       <Avatar className="w-12 h-12 sm:w-16 sm:h-16 border-2 border-white/5 group-hover:border-primary/50 transition-colors shadow-2xl">
                         <AvatarImage src={friend.photoURL} alt={friend.displayName} className="object-cover" />
-                        <AvatarFallback className="bg-primary/10 text-primary font-black text-xl">{friend.displayName[0]}</AvatarFallback>
+                        <AvatarFallback className="bg-primary/10 text-primary font-black text-xl">{friend.displayName?.[0] || '?'}</AvatarFallback>
                       </Avatar>
                       <div className="absolute -bottom-1 -right-1 w-4 h-4 sm:w-5 sm:h-5 bg-[#030303] rounded-full flex items-center justify-center border border-white/5">
                          <div className="w-2 h-2 bg-green-500 rounded-full shadow-[0_0_8px_theme(colors.green.500)]" />

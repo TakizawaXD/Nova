@@ -55,7 +55,7 @@ export function CreatePost() {
       const postPayload: any = {
         authorId: user.uid,
         authorName: profile.username || profile.displayName,
-        authorHandle: profile.username || profile.displayName?.toLowerCase().replace(/\s/g, '_') || 'socio_nova',
+        authorHandle: profile.username || profile.displayName?.toLowerCase().replace(/\s/g, '_') || 'socio_novax',
         authorAvatar: profile.photoURL || '',
         content: finalContent,
         likes: 0,
@@ -103,7 +103,7 @@ export function CreatePost() {
       setLocationStr('');
       setPollOptions(['', '']);
       
-      toast({ title: '¡Publicado!', description: 'Tu señal fue emitida al universo Nova.' });
+      toast({ title: '¡Publicado!', description: 'Tu señal fue emitida al universo NOVAX.' });
     } catch (error) {
       console.error("Error al publicar:", error);
       toast({ variant: 'destructive', title: 'Error', description: 'No se pudo publicar. Intenta de nuevo.' });
@@ -159,7 +159,7 @@ export function CreatePost() {
 
           <div className="flex-1 min-w-0">
             <p className="text-[9px] sm:text-[10px] font-black uppercase tracking-[0.3em] text-primary/70 mb-1.5">
-              @{profile?.username || 'nova_user'}
+              @{profile?.username || 'novax_user'}
             </p>
             <Textarea
               placeholder={`¿Qué emites hoy?`}

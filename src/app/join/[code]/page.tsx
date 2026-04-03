@@ -65,7 +65,7 @@ export default function JoinPage() {
     return (
       <div className="min-h-screen bg-black flex flex-col items-center justify-center p-10 text-center gap-6">
         <h1 className="text-6xl font-black text-white italic tracking-tighter uppercase">Señal Perdida</h1>
-        <p className="text-muted-foreground text-xl max-w-md">Este código de invitación no apunta a ningún núcleo activo en el mapa de NovaSphere.</p>
+        <p className="text-muted-foreground text-xl max-w-md">Este código de invitación no apunta a ningún núcleo activo en el mapa de NOVAX.</p>
         <Button onClick={() => router.push('/')} variant="ghost" className="text-primary font-black uppercase tracking-widest text-xs">
           Regresar a la Base
         </Button>
@@ -120,7 +120,7 @@ export default function JoinPage() {
               )}
             </Button>
             <p className="text-[10px] text-muted-foreground font-black uppercase tracking-widest opacity-40">
-              Al unirte aceptas los protocolos de convivencia de NovaSphere
+              Al unirte aceptas los protocolos de convivencia de NOVAX
             </p>
           </div>
         </div>

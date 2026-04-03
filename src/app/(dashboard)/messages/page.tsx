@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useAuth } from '@/context/AuthContext';
-import { sendMessage, subscribeToMessages, subscribeToUserChats, Message, getAllUsers, startDirectChat, deleteMessage, UserProfile, setTypingStatus, joinGroup } from '@/lib/db';
+import { sendMessage, subscribeToMessages, subscribeToUserChats, Message, getAllUsers, startDirectChat, deleteMessage, UserProfile, setTypingStatus, joinGroup, subscribeToUserFollowing } from '@/lib/db';
 import { db } from '@/lib/firebase';
 import { uploadToSupabase } from '@/lib/supabase';
 import { addDoc, collection, serverTimestamp, updateDoc, doc } from 'firebase/firestore';
@@ -43,8 +43,8 @@ export default function MessagesPage() {
   useEffect(() => {
     if (!user) return;
     
-    // Load all users for the new message dialiog
-    getAllUsers(200).then(f => setFriends(f.filter(u => u.uid !== user.uid)));
+    // Load followed users (friends) for the list
+    const unsubFollowing = subscribeToUserFollowing(user.uid, setFriends);
 
     const unsubscribe = subscribeToUserChats(user.uid, (data) => {
       setChats(data);
@@ -55,7 +55,10 @@ export default function MessagesPage() {
       }
       setLoading(false);
     });
-    return () => unsubscribe();
+    return () => {
+        unsubscribe();
+        unsubFollowing();
+    };
   }, [user]);
 
   // Subscribe to messages when a chat is selected
@@ -149,10 +152,16 @@ export default function MessagesPage() {
     
     // Look up real identity using the all-users list
     const knownUser = friends.find(f => f.uid === otherId);
-    if (knownUser) return { name: knownUser.displayName, avatar: knownUser.photoURL, uid: knownUser.uid };
+    if (knownUser) return { 
+        name: knownUser.displayName, 
+        avatar: knownUser.photoURL, 
+        uid: knownUser.uid,
+        status: knownUser.status || 'offline',
+        lastSeen: knownUser.lastSeen
+    };
 
-    if (chat.participantData && chat.participantData[otherId]) return chat.participantData[otherId];
-    return { name: `Usuario #${otherId.substring(0, 4)}`, avatar: '' };
+    if (chat.participantData && chat.participantData[otherId]) return { ...chat.participantData[otherId], status: 'offline' };
+    return { name: `Usuario #${otherId.substring(0, 4)}`, avatar: '', status: 'offline' };
   };
 
   const handleCreateNewChat = async (friend: UserProfile) => {
@@ -272,7 +281,12 @@ export default function MessagesPage() {
                               <AvatarFallback className="bg-black text-white font-black uppercase text-xl">{f.displayName?.[0]}</AvatarFallback>
                            </Avatar>
                         </div>
-                        <div className="absolute bottom-0 right-0 w-4 h-4 bg-green-500 border-2 border-black rounded-full" />
+                        <div className={cn(
+                            "absolute bottom-0 right-0 w-4 h-4 rounded-full border-2 border-black transition-colors duration-500",
+                            f.status === 'online' ? "bg-green-500 shadow-[0_0_8px_theme(colors.green.500)]" : 
+                            f.status === 'idle' ? "bg-amber-500 shadow-[0_0_8px_theme(colors.amber.500)]" : 
+                            "bg-zinc-600"
+                        )} />
                      </div>
                      <span className="text-[11px] font-bold text-white max-w-[64px] truncate">{f.displayName?.split(' ')[0]}</span>
                   </div>
@@ -301,13 +315,18 @@ export default function MessagesPage() {
                       <AvatarImage src={other.avatar} className="object-cover" />
                       <AvatarFallback className="bg-white/10 text-white font-medium text-lg">{other.name?.charAt(0) || 'U'}</AvatarFallback>
                     </Avatar>
-                    <div className="absolute bottom-0 right-0 w-4 h-4 bg-green-500 rounded-full border-[3px] border-black" />
+                    <div className={cn(
+                        "absolute bottom-0 right-0 w-4 h-4 rounded-full border-[3px] border-black transition-colors",
+                        other.status === 'online' ? "bg-green-500" : 
+                        other.status === 'idle' ? "bg-amber-500" : 
+                        "bg-zinc-600"
+                    )} />
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold text-white truncate">{other.name}</p>
                     <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
                       <p className="truncate font-normal max-w-[150px] sm:max-w-[180px]">
-                        {chat.lastMessage || 'Nuevo en Nova'}
+                        {chat.lastMessage || 'Nuevo en NOVAX'}
                       </p>
                       <span className="shrink-0 text-xs">
                         · {chat.updatedAt ? formatDistanceToNow(chat.updatedAt.toDate(), { locale: es }).split(' ')[0] : '1m'}
@@ -372,11 +391,11 @@ export default function MessagesPage() {
                 <div className="flex flex-col items-center mb-6 space-y-2">
                     <Avatar className="h-20 w-20 border-[3px] border-white/10">
                         <AvatarImage src={currentOtherUser.avatar} />
-                        <AvatarFallback className="text-3xl">{currentOtherUser.name[0]}</AvatarFallback>
+                        <AvatarFallback className="text-3xl">{currentOtherUser.name?.[0] || '?'}</AvatarFallback>
                     </Avatar>
                     <div className="text-center">
                         <p className="text-xl font-bold text-white">{currentOtherUser.name}</p>
-                        <p className="text-sm font-medium text-muted-foreground mt-1">NovaSphere</p>
+                        <p className="text-sm font-medium text-muted-foreground mt-1">NOVAX</p>
                         <Button className="mt-4 rounded-xl bg-white/10 hover:bg-white/20 text-white font-semibold h-8 text-sm px-4 border-none">Ver perfil</Button>
                     </div>
                 </div>
@@ -428,7 +447,7 @@ export default function MessagesPage() {
                                 {(() => {
                                   const ytOrNovaRegex = /(https?:\/\/[^\s]+)/g;
                                   if (!msg.text) return msg.text;
-                                  if (!msg.text.includes('/nova/')) return msg.text;
+                                  if (!msg.text.includes('/nova/') && !msg.text.includes('/novax/')) return msg.text;
                                   
                                   const parts = [];
                                   let lastIndex = 0;
@@ -438,8 +457,9 @@ export default function MessagesPage() {
                                       parts.push(<span key={"t"+match.index}>{msg.text.substring(lastIndex, match.index)}</span>);
                                     }
                                     const url = match[0];
-                                    if (url.includes('/nova/')) {
-                                      const code = url.split('/nova/')[1].split(' ')[0];
+                                    if (url.includes('/nova/') || url.includes('/novax/')) {
+                                      const splitUrl = url.includes('/novax/') ? '/novax/' : '/nova/';
+                                      const code = url.split(splitUrl)[1].split(' ')[0];
                                       parts.push(
                                         <div key={match.index} className="my-2 p-3 bg-black/40 rounded-xl border border-white/10 flex flex-col gap-2 min-w-[200px] shadow-lg">
                                           <span className="text-[10px] font-black text-accent uppercase tracking-widest break-all line-clamp-1">Invitación: {code}</span>
@@ -612,7 +632,7 @@ export default function MessagesPage() {
                   <div className="flex items-center gap-5">
                     <Avatar className="h-16 w-16 border-2 border-white/5 group-hover:border-primary/50 transition-colors shadow-xl">
                       <AvatarImage src={f.photoURL} className="object-cover" />
-                      <AvatarFallback className="bg-white/5 text-primary text-xl font-black">{f.displayName[0]}</AvatarFallback>
+                      <AvatarFallback className="bg-white/5 text-primary text-xl font-black">{f.displayName?.[0] || '?'}</AvatarFallback>
                     </Avatar>
                     <div className="space-y-1">
                       <p className="text-lg font-black text-white italic tracking-tight">{f.displayName}</p>

@@ -9,6 +9,7 @@ import { useRouter } from 'next/navigation';
 import { subscribeToUserFollowing, UserProfile } from '@/lib/db';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { cn } from '@/lib/utils';
 
 export function RightSidebar() {
   const { profile } = useAuth();
@@ -23,7 +24,7 @@ export function RightSidebar() {
   }, [profile?.uid]);
 
   const trends = [
-    { category: 'TECNOLOGÍA', tag: '#NovaSphere', posts: '145.2k' },
+    { category: 'TECNOLOGÍA', tag: '#NOVAX', posts: '145.2k' },
     { category: 'TECNOLOGÍA', tag: '#Ciberpunk2030', posts: '82.8k' },
     { category: 'TECNOLOGÍA', tag: 'IA Generativa', posts: '58.4k' },
   ];
@@ -41,7 +42,7 @@ export function RightSidebar() {
           </Avatar>
           
           <h2 className="text-xl font-black uppercase tracking-tighter text-white mb-1">
-            {profile?.displayName || 'Explorador Nova'}
+            {profile?.displayName || 'Explorador NOVAX'}
           </h2>
           <p className="text-sm text-muted-foreground font-medium mb-6">
             @{profile?.username || 'usuario'}
@@ -68,11 +69,17 @@ export function RightSidebar() {
         <div className="grid grid-cols-3 gap-3">
           {following.length > 0 ? following.slice(0, 9).map((f) => (
             <Link key={f.uid} href={`/profile/${f.uid}`} className="space-y-1.5 group/node cursor-pointer text-center">
-              <div className="aspect-square bg-white/5 rounded-2xl overflow-hidden border border-white/5 transition-all duration-300 group-hover/node:border-primary/50 group-hover/node:shadow-[0_0_15px_rgba(139,92,246,0.2)]">
+              <div className="relative aspect-square bg-white/5 rounded-2xl overflow-hidden border border-white/5 transition-all duration-300 group-hover/node:border-primary/50 group-hover/node:shadow-[0_0_15px_rgba(139,92,246,0.2)]">
                 <Avatar className="w-full h-full rounded-none">
                   <AvatarImage src={f.photoURL} alt={f.displayName} className="object-cover" />
                   <AvatarFallback className="bg-primary/10 text-primary text-[8px] font-black">{f.displayName?.[0]}</AvatarFallback>
                 </Avatar>
+                <div className={cn(
+                    "absolute bottom-1 right-1 w-2.5 h-2.5 rounded-full border border-black",
+                    f.status === 'online' ? "bg-green-500" : 
+                    f.status === 'idle' ? "bg-amber-500" : 
+                    "bg-zinc-500"
+                )} />
               </div>
               <p className="text-[8px] font-black uppercase tracking-tighter text-muted-foreground truncate group-hover/node:text-white transition-colors">{f.displayName}</p>
             </Link>
@@ -117,7 +124,7 @@ export function RightSidebar() {
           <a href="#" className="hover:text-primary">Cookies</a>
           <a href="#" className="hover:text-primary">Más</a>
         </div>
-        <p className="text-[9px] font-black text-muted-foreground uppercase tracking-widest">© 2026 NovaSphere Ecosystem</p>
+        <p className="text-[9px] font-black text-muted-foreground uppercase tracking-widest">© 2026 NOVAX Ecosystem</p>
       </div>
     </aside>
   );

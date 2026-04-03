@@ -41,6 +41,14 @@ export interface UserProfile {
   isVerified?: boolean;
   statusEmoji?: string;
   statusExpiresAt?: any;
+  status: 'online' | 'idle' | 'offline';
+  lastSeen?: any;
+  privacy?: {
+    showStatus?: boolean;
+    showProfile?: boolean;
+    allowDirectMessages?: boolean;
+  };
+  blockedUsers?: string[];
   createdAt?: any;
 }
 
@@ -91,6 +99,7 @@ export interface Channel {
   type: 'text' | 'voice' | 'announcement';
   description?: string;
   isLocked?: boolean;
+  typing?: Record<string, number>;
   createdAt: any;
 }
 
@@ -230,6 +239,27 @@ export const setUserStatus = async (uid: string, emoji: string) => {
   await updateDoc(userRef, {
     statusEmoji: emoji,
     statusExpiresAt: expiresAt
+  });
+};
+
+export const updateUserPresence = async (uid: string, status: 'online' | 'idle' | 'offline') => {
+  if (!uid) return;
+  const userRef = doc(db, 'users', uid);
+  await updateDoc(userRef, {
+    status,
+    lastSeen: serverTimestamp()
+  });
+};
+
+export const subscribeToUserProfile = (uid: string, callback: (profile: UserProfile | null) => void) => {
+  if (!uid) return () => {};
+  const docRef = doc(db, 'users', uid);
+  return onSnapshot(docRef, (snapshot) => {
+    if (snapshot.exists()) {
+      callback({ uid: snapshot.id, ...snapshot.data() } as UserProfile);
+    } else {
+      callback(null);
+    }
   });
 };
 
@@ -705,9 +735,18 @@ export const addStoryResponse = async (response: Omit<StoryResponse, 'id' | 'cre
 };
 
 export const subscribeToStoryResponses = (storyId: string, callback: (responses: StoryResponse[]) => void) => {
-  const q = query(collection(db, 'story_responses'), where('storyId', '==', storyId), orderBy('createdAt', 'desc'));
+  // Evadimos el error de Índice Compuesto ordenando localmente en el cliente
+  const q = query(collection(db, 'story_responses'), where('storyId', '==', storyId));
   return onSnapshot(q, (snapshot) => {
-    callback(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as StoryResponse[]);
+    const responses = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as StoryResponse[];
+    
+    responses.sort((a, b) => {
+      const timeA = a.createdAt?.toMillis ? a.createdAt.toMillis() : 0;
+      const timeB = b.createdAt?.toMillis ? b.createdAt.toMillis() : 0;
+      return timeB - timeA; // Descendente: más recientes primero
+    });
+    
+    callback(responses);
   });
 };
 
@@ -979,6 +1018,17 @@ export const deleteChannel = async (channelId: string, ownerId: string) => {
   for (const m of snapMsg.docs) await deleteDoc(doc(db, 'messages', m.id));
   
   await deleteDoc(channelRef);
+};
+
+export const setChannelTypingStatus = async (channelId: string, userId: string, isTyping: boolean) => {
+    try {
+        const channelRef = doc(db, 'channels', channelId);
+        await updateDoc(channelRef, {
+            [`typing.${userId}`]: isTyping ? Date.now() : 0
+        });
+    } catch (e) {
+        console.warn("Error updating channel typing status", e);
+    }
 };
 
 export const subscribeToChannelMessages = (channelId: string, callback: (messages: Message[]) => void) => {

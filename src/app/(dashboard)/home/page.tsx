@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { CreatePost } from '@/components/feed/CreatePost';
 import { PostCard } from '@/components/feed/PostCard';
-import { StoryList } from '@/components/stories/StoryList';
+import { RedditFeed } from '@/components/feed/RedditFeed';
 import { Loader2, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { subscribeToPosts, Post } from '@/lib/db';
@@ -49,13 +49,6 @@ export default function HomePage() {
     <div className="flex flex-col lg:flex-row gap-8 lg:gap-12 max-w-[1400px] mx-auto items-start justify-center">
         {/* Main Feed Column */}
         <div className="flex-1 max-w-3xl w-full space-y-8 animate-fade-in relative z-10">
-          <div className="space-y-4">
-             <div className="flex items-center justify-between px-2">
-                <h1 className="text-2xl font-black uppercase tracking-tighter text-white">Destellos <span className="text-primary italic animate-pulse">•</span></h1>
-                <span className="text-[10px] font-black text-primary bg-primary/10 px-3 py-1 rounded-full border border-primary/20 uppercase tracking-widest">En Vivo</span>
-             </div>
-             <StoryList />
-          </div>
 
           <CreatePost />
 

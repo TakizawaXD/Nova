@@ -72,7 +72,7 @@ export function PostCard({ id, author, content, image, videoUrl, poll, timestamp
   };
 
   const COMMON_EMOJIS = ['🔥', '✨', '🚀', '⭐', '💎', '❤️', '🙌', '💯', '🦾', '👾', '🪐', '⚡'];
-  const NOVA_STICKERS = [
+  const NOVAX_STICKERS = [
     'https://cdn.pixabay.com/photo/2020/08/21/08/40/astronaut-5505541_1280.png',
     'https://cdn.pixabay.com/photo/2020/08/21/08/46/astronaut-5505568_1280.png',
     'https://cdn.pixabay.com/photo/2017/01/31/15/34/astronaut-2025114_1280.png',
@@ -254,27 +254,24 @@ export function PostCard({ id, author, content, image, videoUrl, poll, timestamp
           )}
 
           {videoUrl && (
-            <div className="relative aspect-video w-full rounded-[2rem] overflow-hidden border border-white/10 mt-4 group/video shadow-2xl bg-black/40">
+            <div className="relative aspect-video w-full rounded-[2rem] border border-white/10 mt-4 group/video shadow-2xl bg-black/40">
               <video 
                 src={videoUrl} 
                 controls 
                 className="w-full h-full object-contain"
-                poster={image} // Opcional: usará la imagen como poster si ambas existen
+                poster={image} 
               />
             </div>
           )}
 
           {image && !videoUrl && (
-            <div className="relative aspect-[16/10] w-full rounded-[2rem] overflow-hidden border border-white/10 mt-4 group/image shadow-2xl">
-              <Image 
+            <div className="relative w-full rounded-[2rem] border border-white/10 mt-4 group/image shadow-2xl bg-black/20">
+              <img 
                 src={image} 
-                alt="Post image" 
-                fill 
-                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 800px"
-                className="object-cover transition-transform duration-700 group-hover/image:scale-105" 
-                priority={priority}
+                alt="Post content" 
+                className="w-full h-auto block transition-transform duration-700 group-hover/image:scale-105" 
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover/image:opacity-100 transition-opacity" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover/image:opacity-100 transition-opacity transition-transform duration-700 pointer-events-none" />
             </div>
           )}
         </CardContent>
@@ -391,7 +388,7 @@ export function PostCard({ id, author, content, image, videoUrl, poll, timestamp
                   {/* Sticker Picker Popover */}
                   {showStickerPicker && (
                       <div className="p-4 bg-[#0a0a15] border border-white/10 rounded-3xl grid grid-cols-4 gap-3 animate-in fade-in slide-in-from-top-4 duration-300 shadow-2xl">
-                          {NOVA_STICKERS.map((sticker, idx) => (
+                          {NOVAX_STICKERS.map((sticker, idx) => (
                               <button 
                                 key={idx} 
                                 onClick={() => handleStickerSelect(sticker)}

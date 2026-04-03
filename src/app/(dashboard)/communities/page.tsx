@@ -26,6 +26,7 @@ import {
   createOrGetChat,
   sendMessage,
   generateUniqueInvite,
+  setChannelTypingStatus,
   Group, 
   Channel, 
   Message,
@@ -62,6 +63,9 @@ export default function CommunitiesPage() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isCreatingChannel, setIsCreatingChannel] = useState(false);
   const [newChannelName, setNewChannelName] = useState('');
+  const [typingUsers, setTypingUsers] = useState<string[]>([]);
+  const typingTimeoutRef = useRef<Record<string, NodeJS.Timeout>>({});
+  const scrollRef = useRef<HTMLDivElement>(null);
   const [newChannelType, setNewChannelType] = useState<'text' | 'voice' | 'announcement'>('text');
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
   const [friendsToInvite, setFriendsToInvite] = useState<UserProfile[]>([]);
@@ -109,6 +113,13 @@ export default function CommunitiesPage() {
     if (window.innerWidth <= 1024) setViewMode('chat');
   };
 
+  // Auto-scroll al fondo al recibir mensajes
+  useEffect(() => {
+    if (scrollRef.current) {
+        scrollRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [messages, typingUsers]);
+
   // Cargar Canales y Miembros al cambiar de Grupo
   useEffect(() => {
     if (!activeGroup) return;
@@ -124,7 +135,20 @@ export default function CommunitiesPage() {
   useEffect(() => {
     if (!activeChannel) return;
     const unsubMsg = subscribeToChannelMessages(activeChannel.id!, setMessages);
-    return () => unsubMsg();
+    
+    // Listener de escribiendo
+    const unsubTyping = subscribeToGroupChannels(activeGroup?.id!, (chs) => {
+        const current = chs.find(c => c.id === activeChannel.id);
+        if (current?.typing) {
+            const now = Date.now();
+            const active = Object.entries(current.typing)
+                .filter(([uid, time]) => uid !== user?.uid && now - (time as number) < 5000)
+                .map(([uid]) => uid);
+            setTypingUsers(active);
+        }
+    });
+
+    return () => { unsubMsg(); unsubTyping(); };
   }, [activeChannel]);
 
   useEffect(() => {
@@ -145,11 +169,28 @@ export default function CommunitiesPage() {
     if (!finalMsg.trim() && type === 'text') return;
     if (!activeChannel || !activeGroup || !user) return;
     
+    const tempId = Date.now().toString();
+    const optimisticMsg: Message = {
+        id: tempId,
+        channelId: activeChannel.id!,
+        groupId: activeGroup.id!,
+        senderId: user.uid,
+        text: finalMsg,
+        type,
+        mediaUrl,
+        createdAt: { toDate: () => new Date() } // Dummy timestamp for instant UI
+    };
+
+    setMessages(prev => [...prev, optimisticMsg]);
     setInput('');
+    // Detener typing inmediatamente
+    setChannelTypingStatus(activeChannel.id!, user.uid, false);
+
     try {
       await sendChannelMessage(activeChannel.id!, activeGroup.id!, user.uid, finalMsg, type, mediaUrl);
     } catch (e) {
       console.error(e);
+      setMessages(prev => prev.filter(m => m.id !== tempId));
       toast({ variant: 'destructive', title: 'Error', description: 'No se pudo enviar el mensaje.'});
     }
   };
@@ -288,11 +329,30 @@ export default function CommunitiesPage() {
     }
   };
   const getMemberData = (uid: string) => {
-    if (uid === user?.uid) return { name: profile?.displayName, avatar: profile?.photoURL, role: members.find(m => m.userId === uid)?.role };
-    // Para simplificar en esta vista, mostramos iniciales si no es el usuario actual,
-    // o podríamos hacer un fetch asíncrono, pero por ahora evitamos picsum.
-    const memberRole = members.find(m => m.userId === uid)?.role;
-    return { name: `Nova Explorer`, avatar: `https://ui-avatars.com/api/?name=Nova+Explorer&background=random`, role: memberRole };
+    // Buscar en el estado de miembros del grupo actual
+    const member = members.find(m => m.userId === uid);
+    if (member) {
+      return {
+        name: member.displayName || 'Ciudadano NX',
+        avatar: member.photoURL || `https://ui-avatars.com/api/?name=${member.displayName || 'NX'}&background=random`,
+        role: member.role
+      };
+    }
+
+    // Respaldo para el usuario actual si no está en la lista inmediata
+    if (uid === user?.uid) {
+      return {
+        name: profile?.displayName || 'Tú',
+        avatar: profile?.photoURL || '',
+        role: 'owner'
+      };
+    }
+
+    return { 
+      name: `Explorador ${uid.substring(0, 4)}`, 
+      avatar: `https://ui-avatars.com/api/?name=Explorer&background=random`, 
+      role: 'member' 
+    };
   };
 
   if (loading) {
@@ -951,17 +1011,17 @@ export default function CommunitiesPage() {
                     const mData = getMemberData(msg.senderId);
                     const isMe = msg.senderId === user?.uid;
                     return (
-                      <div key={msg.id || i} className="flex gap-6 group hover:bg-white/[0.04] p-5 -mx-5 rounded-[2.5rem] transition-all duration-300 relative overflow-hidden">
-                        <div className="relative group/avatar shrink-0 mt-1">
-                          <Avatar className="h-14 w-14 border-2 border-white/5 group-hover/avatar:border-primary/50 transition-colors shadow-xl cursor-hover">
+                      <div key={msg.id || i} className="flex gap-4 group hover:bg-white/[0.04] py-1.5 px-4 -mx-4 rounded-xl transition-all duration-200 relative overflow-hidden">
+                        <div className="relative group/avatar shrink-0 mt-0.5">
+                          <Avatar className="h-10 w-10 border border-white/5 group-hover/avatar:border-primary/50 transition-colors shadow-lg cursor-hover rounded-xl">
                             <AvatarImage src={mData.avatar} alt="Imagen" className="object-cover" />
-                            <AvatarFallback className="bg-white/5 text-primary text-xl font-black">{mData.name?.[0]}</AvatarFallback>
+                            <AvatarFallback className="bg-white/5 text-primary text-sm font-black">{mData.name?.[0]}</AvatarFallback>
                           </Avatar>
                         </div>
-                        <div className="space-y-3 flex-1 min-w-0">
-                          <div className="flex items-center gap-4">
-                            <span className={cn("text-lg font-black italic tracking-tight cursor-hover hover:underline transition-colors uppercase", isMe ? "text-primary": "text-white")}>{mData.name}</span>
-                            <span className="text-[9px] font-black uppercase tracking-widest text-muted-foreground bg-white/5 px-3 py-1 rounded-full border border-white/5">
+                        <div className="space-y-0.5 flex-1 min-w-0">
+                          <div className="flex items-center gap-3">
+                            <span className={cn("text-[14px] font-black italic tracking-tight cursor-hover hover:underline transition-colors uppercase", isMe ? "text-primary": "text-white")}>{mData.name}</span>
+                            <span className="text-[8px] font-black uppercase tracking-widest text-muted-foreground/50">
                                 {msg.createdAt ? formatDistanceToNow(msg.createdAt.toDate(), { locale: es }).replace('alrededor de', '') : 'Subiendo...'}
                             </span>
                           </div>
@@ -1004,7 +1064,6 @@ export default function CommunitiesPage() {
                           )}
                         </div>
                         
-                        {/* Micro-interaction highlight */}
                         <div className="absolute right-4 md:right-8 top-4 md:top-8 bg-[#050510]/90 backdrop-blur-3xl px-2 md:px-4 py-2 rounded-2xl opacity-0 group-hover:opacity-100 transition-all flex border border-white/10 shadow-2xl scale-90 group-hover:scale-100">
                              <div className="flex gap-1">
                                 {['👍', '🔥', '🚀', '❤️', '😂'].map(emoji => (
@@ -1023,6 +1082,17 @@ export default function CommunitiesPage() {
                       </div>
                     );
                   })}
+                  {typingUsers.length > 0 && (
+                    <div className="flex items-center gap-3 px-5 py-2 animate-pulse">
+                        <div className="flex gap-1">
+                            <span className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                            <span className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                            <span className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                        </div>
+                        <span className="text-[10px] font-black uppercase text-primary tracking-widest italic">Ciudadanos en transmisión...</span>
+                    </div>
+                  )}
+                  <div ref={scrollRef} />
                 </div>
               </div>
             </ScrollArea>
@@ -1032,7 +1102,16 @@ export default function CommunitiesPage() {
               <div className="relative group">
                 <Input 
                   value={input}
-                  onChange={(e) => setInput(e.target.value)}
+                  onChange={(e) => {
+                      setInput(e.target.value);
+                      if (activeChannel && user) {
+                          setChannelTypingStatus(activeChannel.id!, user.uid, true);
+                          if (typingTimeoutRef.current[activeChannel.id!]) clearTimeout(typingTimeoutRef.current[activeChannel.id!]);
+                          typingTimeoutRef.current[activeChannel.id!] = setTimeout(() => {
+                              setChannelTypingStatus(activeChannel.id!, user.uid, false);
+                          }, 3000);
+                      }
+                  }}
                   onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
                   placeholder={`Mandar a #${activeChannel.name}`}
                   className="w-full bg-[#050510]/80 backdrop-blur-3xl hover:bg-[#080815] focus-visible:bg-[#080815] border border-white/5 focus-visible:border-primary/40 h-14 md:h-20 rounded-[2rem] pl-14 md:pl-16 pr-16 md:pr-24 text-sm md:text-lg font-bold italic tracking-tight transition-all shadow-2xl placeholder:text-muted-foreground/30 focus-visible:ring-0"
@@ -1045,25 +1124,42 @@ export default function CommunitiesPage() {
                            </Button>
                         </PopoverTrigger>
                         <PopoverContent className="w-[85vw] md:w-80 bg-[#050510]/95 backdrop-blur-3xl border border-white/10 rounded-3xl p-4 md:p-6 shadow-2xl">
-                           <div className="space-y-4">
-                              <p className="text-[10px] font-black uppercase tracking-widest text-primary/60">Stickers Galácticos</p>
-                              <div className="grid grid-cols-3 gap-3">
-                                 {[
-                                   'https://cdn3d.iconscout.com/3d/premium/thumb/rocket-4286121-3563212.png',
-                                   'https://cdn3d.iconscout.com/3d/premium/thumb/alien-head-5246237-4389146.png',
-                                   'https://cdn3d.iconscout.com/3d/premium/thumb/ufo-4676104-3891361.png',
-                                   'https://cdn3d.iconscout.com/3d/premium/thumb/star-4034376-3335508.png',
-                                   'https://cdn3d.iconscout.com/3d/premium/thumb/planet-4034374-3335506.png',
-                                   'https://cdn3d.iconscout.com/3d/premium/thumb/astronaut-4676110-3891367.png'
-                                 ].map((url, idx) => (
-                                   <div 
+                           <div className="space-y-6">
+                              <div>
+                                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-primary mb-3">Reacciones Rápidas</p>
+                                <div className="grid grid-cols-6 gap-2">
+                                  {['🔥', '✨', '🚀', '💎', '❤️', '🛰️', '⚡', '💯', '🦾', '👾', '🌀', '🛸'].map(emoji => (
+                                    <button 
+                                      key={emoji}
+                                      onClick={() => setInput(prev => prev + emoji)}
+                                      className="h-10 w-10 flex items-center justify-center text-xl hover:scale-125 transition-transform active:scale-90"
+                                    >
+                                      {emoji}
+                                    </button>
+                                  ))}
+                                </div>
+                              </div>
+
+                              <div>
+                                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-accent mb-3">Stickers Galácticos</p>
+                                <div className="grid grid-cols-3 gap-3">
+                                  {[
+                                    'https://cdn3d.iconscout.com/3d/premium/thumb/rocket-4286121-3563212.png',
+                                    'https://cdn3d.iconscout.com/3d/premium/thumb/alien-head-5246237-4389146.png',
+                                    'https://cdn3d.iconscout.com/3d/premium/thumb/ufo-4676104-3891361.png',
+                                    'https://cdn3d.iconscout.com/3d/premium/thumb/star-4034376-3335508.png',
+                                    'https://cdn3d.iconscout.com/3d/premium/thumb/planet-4034374-3335506.png',
+                                    'https://cdn3d.iconscout.com/3d/premium/thumb/astronaut-4676110-3891367.png'
+                                  ].map((url, idx) => (
+                                    <div 
                                       key={idx} 
                                       onClick={() => handleSendMessage('', 'sticker', url)}
                                       className="h-16 md:h-20 bg-white/5 rounded-2xl flex items-center justify-center cursor-pointer hover:bg-primary/20 hover:scale-110 transition-all border border-white/5"
-                                   >
+                                    >
                                       <img src={url} alt="Sticker" className="w-10 h-10 md:w-14 md:h-14 object-contain" />
-                                   </div>
-                                 ))}
+                                    </div>
+                                  ))}
+                                </div>
                               </div>
                            </div>
                         </PopoverContent>
@@ -1080,14 +1176,14 @@ export default function CommunitiesPage() {
                         onClick={() => mediaInputRef.current?.click()}
                         variant="ghost" 
                         size="icon" 
-                        className="hidden md:flex h-10 w-10 text-muted-foreground hover:text-primary transition-all"
+                        className="flex h-10 w-10 text-muted-foreground hover:text-primary transition-all"
                      >
                         <Image className="w-6 h-6" />
                      </Button>
                 </div>
                 <div className="absolute right-2 md:right-4 top-1/2 -translate-y-1/2 flex items-center gap-3">
                     <Button 
-                        onClick={handleSendMessage}
+                        onClick={() => handleSendMessage()}
                         disabled={!input.trim()}
                         className="h-10 w-10 md:h-14 md:w-14 rounded-full md:rounded-2xl bg-primary text-white shadow-xl shadow-primary/20 hover:bg-primary/80 transition-all hover:scale-105 active:scale-95"
                     >

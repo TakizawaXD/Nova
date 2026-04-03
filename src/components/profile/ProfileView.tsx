@@ -144,7 +144,7 @@ export function ProfileView({ targetProfile, isOwnProfile }: ProfileViewProps) {
             </div>
             <div className="flex flex-col md:flex-row items-center gap-4 mb-4">
               <p className="font-black text-muted-foreground uppercase tracking-widest text-[11px] opacity-60">
-                {followers.length} Seguidores Nova
+                {followers.length} Seguidores NOVAX
               </p>
               <div className="hidden md:block w-1.5 h-1.5 bg-white/20 rounded-full" />
               <p className="text-[10px] font-black text-primary bg-primary/10 px-4 py-1.5 rounded-2xl border border-primary/20 tracking-[0.2em] uppercase">
@@ -185,7 +185,7 @@ export function ProfileView({ targetProfile, isOwnProfile }: ProfileViewProps) {
                 <DialogContent className="bg-[#050510]/95 backdrop-blur-3xl border border-white/10 rounded-[3rem] max-w-xl p-8 shadow-2xl">
                   <DialogHeader>
                     <DialogTitle className="text-3xl font-black uppercase tracking-tighter text-white italic">Modificar Identidad <span className="text-primary">•</span></DialogTitle>
-                    <DialogDescription className="sr-only">Actualiza los datos públicos de tu identidad en NovaSphere, incluyendo nombre y biografía.</DialogDescription>
+                    <DialogDescription className="sr-only">Actualiza los datos públicos de tu identidad en NOVAX, incluyendo nombre y biografía.</DialogDescription>
                   </DialogHeader>
                   <div className="space-y-6 py-6 font-medium">
                     <div className="space-y-2">
@@ -230,11 +230,11 @@ export function ProfileView({ targetProfile, isOwnProfile }: ProfileViewProps) {
         <div className="space-y-8 lg:sticky lg:top-28 h-fit">
           <Card className="bg-[#050510]/40 backdrop-blur-3xl border border-white/5 rounded-[2.5rem] shadow-2xl p-8 space-y-6">
             <h2 className="text-xl font-black text-white uppercase tracking-tighter italic">Bio-Data <span className="text-primary">/ 01</span></h2>
-            <p className="text-center italic text-white/50 leading-relaxed border-b border-white/5 pb-6">"{targetProfile.bio || 'Nodo Nova sin descripción.'}"</p>
+            <p className="text-center italic text-white/50 leading-relaxed border-b border-white/5 pb-6">"{targetProfile.bio || 'Nodo NOVAX sin descripción.'}"</p>
             <div className="space-y-4">
                <div className="flex items-center gap-4">
                   <MapPin className="text-primary w-5 h-5" />
-                  <p className="font-bold text-sm">{targetProfile.location || 'Nova System'}</p>
+                  <p className="font-bold text-sm">{targetProfile.location || 'NOVAX System'}</p>
                </div>
                <div className="flex items-center gap-4">
                   <LinkIcon className="text-primary w-5 h-5" />

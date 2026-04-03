@@ -38,7 +38,7 @@ export function InstallButton({ inline = false }: { inline?: boolean }) {
     const { outcome } = await deferredPrompt.userChoice;
     
     if (outcome === 'accepted') {
-      toast({ title: "NovaSphere Instalada", description: "Bienvenido al ecosistema nativo." });
+      toast({ title: "NOVAX Instalada", description: "Bienvenido al ecosistema nativo." });
     }
     
     setDeferredPrompt(null);
@@ -54,7 +54,7 @@ export function InstallButton({ inline = false }: { inline?: boolean }) {
                  </div>
                  <div>
                     <p className="font-black text-white italic text-sm sm:text-base">App Instalada</p>
-                    <p className="text-[10px] sm:text-xs text-muted-foreground uppercase font-medium mt-0.5">NovaSphere nativo en ejecución.</p>
+                    <p className="text-[10px] sm:text-xs text-muted-foreground uppercase font-medium mt-0.5">NOVAX nativo en ejecución.</p>
                  </div>
              </div>
           </div>
@@ -71,7 +71,7 @@ export function InstallButton({ inline = false }: { inline?: boolean }) {
                     <Download className="w-5 h-5 sm:w-6 sm:h-6" />
                  </div>
                  <div>
-                    <p className="font-black text-white italic text-sm sm:text-base">Instalar NovaSphere</p>
+                    <p className="font-black text-white italic text-sm sm:text-base">Instalar NOVAX</p>
                     <p className="text-[10px] sm:text-xs text-primary/80 uppercase font-bold mt-0.5">Optimización PWA al núcleo.</p>
                  </div>
              </div>
@@ -89,7 +89,7 @@ export function InstallButton({ inline = false }: { inline?: boolean }) {
             </div>
             <div className="flex flex-col truncate">
             <p className="text-[8px] sm:text-[10px] font-black uppercase tracking-widest text-primary truncate">Disponible Nativo</p>
-            <p className="text-xs sm:text-sm font-black text-white italic truncate">INSTALAR NOVA</p>
+            <p className="text-xs sm:text-sm font-black text-white italic truncate">INSTALAR NOVAX</p>
             </div>
         </div>
         <div className="flex shrink-0 items-center justify-end">

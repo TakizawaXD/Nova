@@ -138,19 +138,19 @@ export default function StoriesPage() {
   return (
     <div className="max-w-3xl mx-auto space-y-10 animate-fade-in pt-8 pb-32">
       <div className="flex flex-col mb-4 px-4 space-y-2">
-        <Badge className="w-fit bg-orange-500/10 text-orange-500 border-orange-500/20 uppercase font-black tracking-widest px-3 py-1 rounded-full text-[10px]">
-          Frecuencias Efímeras <Clock className="w-3 h-3 ml-1.5 inline mb-0.5" />
+        <Badge className="w-fit bg-primary/10 text-primary border-primary/20 uppercase font-black tracking-widest px-3 py-1 rounded-full text-[10px]">
+          Nodo de Discusión <MessageSquare className="w-3 h-3 ml-1.5 inline mb-0.5" />
         </Badge>
         <h1 className="text-5xl font-black tracking-tighter uppercase flex items-center gap-3 text-white italic">
-           <Flame className="w-10 h-10 fill-orange-500 text-orange-500" />
-           Destellos y <span className="text-orange-500">Foros</span>
+           <Zap className="w-10 h-10 fill-primary text-primary" />
+           Nexus <span className="text-primary">Global</span>
         </h1>
-        <p className="text-muted-foreground text-sm font-bold tracking-tight italic opacity-70">Emisiones comunitarias que se desintegran en 24 horas.</p>
+        <p className="text-muted-foreground text-sm font-bold tracking-tight italic opacity-70">Hilos de discusión técnica y comunitaria sincronizados en la red.</p>
       </div>
 
       {/* Selector de Emisión Mejorado */}
-      <Card className="mx-4 glass border-orange-500/20 rounded-[2.5rem] p-1 shadow-2xl relative overflow-hidden group">
-        <div className="absolute -top-20 -right-20 w-64 h-64 bg-orange-500/10 rounded-full blur-[80px] pointer-events-none group-hover:bg-orange-500/20 transition-all duration-700" />
+      <Card className="mx-4 glass border-primary/20 rounded-[2.5rem] p-1 shadow-2xl relative overflow-hidden group">
+        <div className="absolute -top-20 -right-20 w-64 h-64 bg-primary/10 rounded-full blur-[80px] pointer-events-none group-hover:bg-primary/20 transition-all duration-700" />
         <CardContent className="p-4 sm:p-8 space-y-6">
           <div className="flex gap-3 sm:gap-5">
             <Avatar className="h-10 w-10 sm:h-14 sm:h-14 border-2 border-orange-500/30 ring-4 ring-orange-500/5 items-center justify-center">
@@ -162,9 +162,9 @@ export default function StoriesPage() {
                  <Button 
                    onClick={() => setStoryType('text')} 
                    variant="ghost" 
-                   className={cn("h-7 sm:h-8 rounded-full text-[9px] sm:text-[10px] font-black uppercase tracking-widest px-3 sm:px-4 transition-all", storyType === 'text' ? "bg-orange-500 text-white" : "text-muted-foreground hover:bg-white/5")}
+                   className={cn("h-7 sm:h-8 rounded-full text-[9px] sm:text-[10px] font-black uppercase tracking-widest px-3 sm:px-4 transition-all", storyType === 'text' ? "bg-primary text-white" : "text-muted-foreground hover:bg-white/5")}
                  >
-                   Texto
+                   Discusión
                  </Button>
                  <Button 
                    onClick={() => setStoryType('poll')} 
@@ -268,11 +268,11 @@ export default function StoriesPage() {
                   disabled={isSubmitting || !newTitle.trim()} 
                   className={cn(
                     "h-10 sm:h-14 rounded-xl sm:rounded-2xl px-6 sm:px-10 font-black uppercase tracking-widest gap-2 sm:gap-3 transition-all", 
-                    storyType === 'poll' ? "bg-primary shadow-primary/20" : storyType === 'qna' ? "bg-accent text-black shadow-accent/20" : "bg-orange-500 shadow-orange-500/20"
+                    storyType === 'poll' ? "bg-primary shadow-primary/20" : storyType === 'qna' ? "bg-accent text-black shadow-accent/20" : "bg-primary shadow-primary/20"
                   )}
                 >
-                  {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4" />}
-                  Emitir
+                  {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+                  Iniciar Hilo
                 </Button>
               </div>
             </div>
@@ -437,7 +437,7 @@ function StoryCard({
               <AvatarFallback className="text-[8px]">{story.authorName[0]}</AvatarFallback>
             </Avatar>
             <div className="flex items-center gap-2 text-[9px] sm:text-[10px] font-black uppercase tracking-widest">
-              <span className="text-orange-500 italic">{story.authorName}</span>
+              <span className="text-primary italic">{story.authorName}</span>
               <span className="text-muted-foreground/40 hidden sm:inline">•</span>
               <span className="text-muted-foreground/60 flex items-center gap-1"><Clock className="w-3 h-3" /> {story.createdAt ? formatDistanceToNow(story.createdAt.toDate(), { locale: es }) : ''}</span>
             </div>
@@ -469,16 +469,20 @@ function StoryCard({
           <h2 className={cn("text-xl sm:text-3xl font-black italic tracking-tighter uppercase leading-tight", story.type === 'poll' ? "text-primary" : story.type === 'qna' ? "text-accent" : "text-white")}>
             {story.title}
           </h2>
-          {story.content && <p className="text-sm sm:text-base text-muted-foreground font-medium leading-relaxed italic whitespace-pre-wrap opacity-80">{story.content}</p>}
+          {story.content && story.type !== 'image' && story.type !== 'video' && (
+            <p className="text-sm sm:text-base text-muted-foreground font-medium leading-relaxed italic whitespace-pre-wrap opacity-80">
+              {story.content}
+            </p>
+          )}
         </div>
 
         {/* Media Block */}
         {(story.type === 'image' || story.type === 'video') && story.content && story.content.startsWith('http') && (
-          <div className="rounded-[2rem] overflow-hidden border border-white/5 relative aspect-video mt-4 shadow-2xl bg-black/40">
+          <div className="rounded-[2rem] overflow-hidden border border-white/10 relative mt-4 shadow-2xl bg-black/40">
             {story.type === 'video' ? (
-                <video src={story.content} controls className="w-full h-full object-contain" />
+                <video src={story.content} controls className="w-full h-auto block" />
             ) : (
-                <img src={story.content} alt="Contenido" className="w-full h-full object-cover" />
+                <img src={story.content} alt="Contenido" className="w-full h-auto block" />
             )}
           </div>
         )}

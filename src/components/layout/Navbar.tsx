@@ -103,13 +103,13 @@ export function Navbar() {
 
   return (
     <nav className="sticky top-0 z-50 w-full bg-[#050510]/80 backdrop-blur-3xl border-b border-white/5 px-6 h-20 flex items-center justify-between">
-      <div className="flex items-center gap-12 flex-1">
-        <Link href="/home" className="flex items-center gap-3 group">
-          <div className="w-12 h-12 bg-primary rounded-[1.25rem] flex items-center justify-center shadow-lg shadow-primary/20 transition-transform duration-500 hover:rotate-3">
-            <Sparkles className="text-white w-7 h-7" />
+      <div className="flex items-center gap-10 md:gap-12 flex-1 min-w-0">
+        <Link href="/home" className="flex items-center gap-3 group shrink-0">
+          <div className="w-10 h-10 md:w-12 md:h-12 bg-primary rounded-xl md:rounded-[1.25rem] flex items-center justify-center shadow-lg shadow-primary/20 transition-all duration-500 hover:rotate-3 group-hover:scale-105 active:scale-95">
+            <span className="text-white font-[1000] text-xl md:text-2xl tracking-tighter mt-0.5">NX</span>
           </div>
-          <span className="text-2xl font-black text-white tracking-tighter hidden sm:block">
-            NOVA
+          <span className="text-xl md:text-2xl font-black text-white tracking-tighter truncate uppercase italic-nova">
+            NOVAX
           </span>
         </Link>
         
@@ -117,7 +117,7 @@ export function Navbar() {
           <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
           <Input 
             className="pl-14 h-14 bg-white/5 border-white/5 focus:bg-white/10 focus:border-white/10 transition-all rounded-[1.25rem] placeholder:text-muted-foreground/50 text-base" 
-            placeholder="Descubre el universo Nova..." 
+            placeholder="Descubre el universo NOVAX..." 
           />
         </div>
       </div>
@@ -186,8 +186,15 @@ export function Navbar() {
               <div className="hidden lg:flex flex-col items-end">
                 <span className="text-base font-black group-hover:text-primary transition-colors">{profile?.displayName || 'Usuario'}</span>
                 <div className="flex items-center gap-1.5">
-                  <div className="w-2 h-2 bg-green-500 rounded-full shadow-[0_0_8px_theme(colors.green.500)]" />
-                  <span className="text-[10px] text-muted-foreground uppercase font-black tracking-[0.2em]">Conectado</span>
+                  <div className={cn(
+                    "w-2 h-2 rounded-full shadow-[0_0_8px_currentColor]",
+                    profile?.status === 'online' ? "bg-green-500 text-green-500" : 
+                    profile?.status === 'idle' ? "bg-amber-500 text-amber-500" : 
+                    "bg-zinc-500 text-zinc-500"
+                  )} />
+                  <span className="text-[10px] text-muted-foreground uppercase font-black tracking-[0.2em]">
+                    {profile?.status === 'online' ? 'Conectado' : profile?.status === 'idle' ? 'Ausente' : 'Desconectado'}
+                  </span>
                 </div>
               </div>
               <div className="relative group">
@@ -196,13 +203,18 @@ export function Navbar() {
                   <AvatarFallback className="bg-primary/20 text-primary font-black">{profile?.displayName?.charAt(0) || 'U'}</AvatarFallback>
                 </Avatar>
                 <div className="absolute top-0 right-0 w-4 h-4 bg-[#050510] rounded-full flex items-center justify-center border border-white/5">
-                   <div className="w-2 h-2 bg-green-500 rounded-full" />
+                   <div className={cn(
+                     "w-2 h-2 rounded-full",
+                     profile?.status === 'online' ? "bg-green-500" : 
+                     profile?.status === 'idle' ? "bg-amber-500" : 
+                     "bg-zinc-500"
+                   )} />
                 </div>
               </div>
             </div>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-64 bg-[#050510]/95 backdrop-blur-2xl border border-white/10 rounded-[2rem] mt-4 p-3 shadow-2xl">
-            <DropdownMenuLabel className="font-black uppercase tracking-widest text-[11px] text-muted-foreground px-4 py-3 pb-1">Núcleo NovaSphere</DropdownMenuLabel>
+            <DropdownMenuLabel className="font-black uppercase tracking-widest text-[11px] text-muted-foreground px-4 py-3 pb-1">Núcleo NOVAX</DropdownMenuLabel>
             
             <div className="px-4 mb-4 mt-2">
               <p className="text-[9px] font-black uppercase tracking-widest text-primary mb-3 opacity-60">Sintonía de Frecuencia</p>

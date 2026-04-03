@@ -5,7 +5,7 @@ import { Home, Compass, MessageCircle, Users, User, Clapperboard, Store, UserPlu
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { InstallButton } from '@/components/pwa/InstallButton';
 
 const navItems = [
   { icon: Home, href: '/', label: 'Inicio' },
@@ -34,9 +34,12 @@ export function MobileNav() {
             NOVAX
           </span>
         </Link>
-        <div className="flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-green-500 shadow-[0_0_8px_theme(colors.green.500)]" />
-            <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground opacity-60">Núcleo Activo</span>
+        <div className="flex items-center gap-3">
+            <InstallButton variant="icon" />
+            <div className="flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-green-500 shadow-[0_0_8px_theme(colors.green.500)]" />
+                <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground opacity-60">Núcleo Activo</span>
+            </div>
         </div>
       </div>
 

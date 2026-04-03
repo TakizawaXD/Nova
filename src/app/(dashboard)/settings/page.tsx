@@ -292,7 +292,7 @@ export default function SettingsPage() {
                <CardTitle className="text-lg sm:text-xl font-black uppercase tracking-tighter mb-6 sm:mb-8 flex items-center gap-3">
                   <Smartphone className="w-5 h-5 sm:w-6 sm:h-6 text-primary" /> Instalación Nativa PWA
                </CardTitle>
-               <InstallButton inline={true} />
+               <InstallButton variant="inline" />
             </Card>
           </div>
         );

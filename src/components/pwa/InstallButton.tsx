@@ -55,12 +55,12 @@ export function InstallButton({
       return (
           <div className="flex items-center justify-between p-4 sm:p-6 bg-white/[0.02] border border-white/5 rounded-3xl opacity-50">
              <div className="flex items-center gap-4">
-                 <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-white/5 flex items-center justify-center text-muted-foreground">
-                    <Smartphone className="w-5 h-5 sm:w-6 sm:h-6" />
+                 <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-white/5 flex items-center justify-center overflow-hidden border border-white/10 opacity-60">
+                    <img src="/icons/icon-192x192.png" className="w-full h-full object-cover grayscale" alt="Installed" />
                  </div>
                  <div>
-                    <p className="font-black text-white italic text-sm sm:text-base">App Instalada</p>
-                    <p className="text-[10px] sm:text-xs text-muted-foreground uppercase font-medium mt-0.5">NOVAX nativo en ejecución.</p>
+                    <p className="font-black text-white italic text-sm sm:text-base tracking-tight italic-nova uppercase">App Sincronizada</p>
+                    <p className="text-[9px] sm:text-[10px] text-muted-foreground uppercase font-black tracking-widest mt-0.5">NOVAX nativo en ejecución.</p>
                  </div>
              </div>
           </div>
@@ -71,29 +71,25 @@ export function InstallButton({
 
   if (variant === 'icon') {
     return (
-      <Button 
+      <button 
         onClick={handleInstallClick}
-        variant="ghost" 
-        size="icon" 
-        className="h-10 w-10 bg-primary/20 hover:bg-primary text-primary hover:text-white rounded-xl transition-all shadow-lg animate-pulse"
+        className="h-10 w-10 bg-primary/20 hover:bg-primary rounded-xl transition-all shadow-lg animate-pulse overflow-hidden border border-primary/30 group p-1"
       >
-        <Download className="w-5 h-5" />
-      </Button>
+        <img src="/icons/icon-192x192.png" className="w-full h-full object-cover rounded-lg group-hover:scale-110 transition-transform" alt="Install" />
+      </button>
     );
   }
 
   if (variant === 'inline') {
       return (
           <div className="flex items-center justify-between p-4 sm:p-6 bg-primary/10 border border-primary/20 rounded-3xl group">
-             <div className="flex items-center gap-3 sm:gap-4">
-                 <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-primary flex items-center justify-center text-white group-hover:scale-110 transition-transform shadow-lg shadow-primary/20">
-                    <Download className="w-5 h-5 sm:w-6 sm:h-6" />
-                 </div>
-                 <div>
-                    <p className="font-black text-white italic text-sm sm:text-base">Instalar NOVAX</p>
-                    <p className="text-[10px] sm:text-xs text-primary/80 uppercase font-bold mt-0.5">Optimización PWA al núcleo.</p>
-                 </div>
-             </div>
+              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-primary flex items-center justify-center group-hover:scale-110 transition-transform shadow-[0_0_20px_rgba(139,92,246,0.3)] overflow-hidden border border-white/20">
+                 <img src="/icons/icon-192x192.png" className="w-full h-full object-cover" alt="Install" />
+              </div>
+              <div className="truncate">
+                 <p className="font-black text-white italic text-sm sm:text-base tracking-tight uppercase italic-nova">Sincronizar NOVAX</p>
+                 <p className="text-[9px] sm:text-[10px] text-primary/80 uppercase font-black tracking-widest mt-0.5">Optimización PWA al núcleo.</p>
+              </div>
              <Button onClick={handleInstallClick} className="rounded-xl bg-white text-black hover:bg-primary hover:text-white font-black uppercase tracking-widest text-[9px] sm:text-[10px] px-4 sm:px-6 shadow-xl transition-all h-10 border border-white/10">Descargar</Button>
           </div>
       );
@@ -105,8 +101,8 @@ export function InstallButton({
         <div className="absolute inset-0 bg-gradient-to-r from-primary/10 via-transparent to-primary/5 opacity-50" />
         
         <div className="flex items-center gap-4 truncate relative z-10">
-            <div className="h-12 w-12 sm:h-14 sm:w-14 bg-primary rounded-2xl flex shrink-0 items-center justify-center shadow-[0_0_30px_rgba(139,92,246,0.4)] transform -rotate-3 group-hover:rotate-0 transition-transform duration-500">
-              <span className="text-white font-[1000] text-xl sm:text-2xl tracking-tighter mt-0.5">NX</span>
+            <div className="h-12 w-12 sm:h-14 sm:w-14 bg-primary rounded-2xl flex shrink-0 items-center justify-center shadow-[0_0_30px_rgba(139,92,246,0.4)] transform -rotate-3 group-hover:rotate-0 transition-transform duration-500 overflow-hidden border border-white/10">
+              <img src="/icons/icon-192x192.png" className="w-full h-full object-cover" alt="NOVAX icon" />
             </div>
             <div className="flex flex-col truncate">
               <p className="text-[9px] sm:text-[10px] font-black uppercase tracking-[0.25em] text-primary/80 truncate">Sincronización Nativa</p>
